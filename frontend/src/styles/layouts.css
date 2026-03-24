@@ -1,0 +1,141 @@
+/* 布局样式 */
+
+/* 应用包装器 */
+.app-wrapper {
+  background: var(--bg-gradient);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* 主导航 */
+.main-nav {
+  background: var(--primary-gradient);
+  padding: var(--spacing-md) 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-xxl) var(--border-radius-xxl) 0 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.nav-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-title {
+  margin: 0;
+  font-size: var(--font-size-xxxl);
+  color: var(--white);
+  font-weight: var(--font-weight-semibold);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-base);
+  font-size: var(--font-size-base);
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--white);
+}
+
+.nav-link.router-link-active {
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--white);
+  font-weight: var(--font-weight-medium);
+}
+
+.admin-link {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 主内容区 */
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.main-content > * {
+  background: var(--bg-card);
+  border-radius: 0 0 var(--border-radius-xxl) var(--border-radius-xxl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+/* 结果区域容器 */
+.result-section {
+  padding: var(--spacing-xxxl);
+}
+
+.result-header {
+  border-bottom: 3px solid var(--primary-medium);
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xxxl);
+  padding-bottom: var(--spacing-xl);
+  display: flex;
+}
+
+.result-title {
+  color: var(--gray-700);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .app-wrapper {
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+  }
+
+  .main-nav {
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    padding: var(--spacing-sm) 0;
+  }
+
+  .nav-content {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .nav-title {
+    font-size: var(--font-size-xxl);
+  }
+
+  .nav-link {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-md);
+  }
+
+  .main-content > * {
+    border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+  }
+
+  .result-section {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .result-title {
+    font-size: var(--font-size-xxl);
+  }
+}

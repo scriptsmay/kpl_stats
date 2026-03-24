@@ -1,50 +1,49 @@
 <template>
-  <div class="result-section" style="display: block" v-if="careerData">
+  <div class="result-section" v-if="careerData">
     <div class="result-header">
       <div class="result-title">选手生涯数据</div>
     </div>
 
     <!-- 赛季筛选 -->
     <div class="season-filter-container">
-      <button
-        class="season-filter-btn active"
-        @click="filterSeasonType('all')"
-        :class="{ active: seasonFilter === 'all' }"
-      >
+      <button class="season-filter-btn" :class="{ active: seasonFilter === 'all' }" @click="filterSeasonType('all')">
         📊 全部赛季
       </button>
       <button
         class="season-filter-btn"
-        @click="filterSeasonType('league')"
         :class="{ active: seasonFilter === 'league' }"
+        @click="filterSeasonType('league')"
       >
         🏆 联赛
       </button>
-      <button class="season-filter-btn" @click="filterSeasonType('cup')" :class="{ active: seasonFilter === 'cup' }">
+      <button class="season-filter-btn" :class="{ active: seasonFilter === 'cup' }" @click="filterSeasonType('cup')">
         🏅 杯赛
       </button>
     </div>
 
-    <!-- 选手卡片 -->
-    <div class="player-card-container single">
-      <div class="player-card">
-        <img :src="playerAvatar" :alt="careerData.player_info.latest_nickname" @error="handleAvatarError" />
-        <div class="player-card-name">{{ careerData.player_info.latest_nickname }}</div>
-        <div class="player-card-info">{{ careerData.player_info.latest_team }}</div>
-        <div class="player-card-info">{{ careerData.player_info.position || '位置未知' }}</div>
-        <div class="player-card-info">筛选：{{ seasonFilterText }}</div>
+    <!-- 左右横向排列的卡片 -->
+    <div class="flex flex-wrap">
+      <!-- 选手卡片 -->
+      <div class="player-card-container single">
+        <div class="player-card">
+          <img :src="playerAvatar" :alt="careerData.player_info.latest_nickname" @error="handleAvatarError" />
+          <div class="player-card-name">{{ careerData.player_info.latest_nickname }}</div>
+          <div class="player-card-info">{{ careerData.player_info.latest_team }}</div>
+          <div class="player-card-info">{{ careerData.player_info.position || '对抗路' }}</div>
+          <div class="player-card-info">筛选：{{ seasonFilterText }}</div>
+        </div>
       </div>
-    </div>
 
-    <!-- 职业生涯信息卡 -->
-    <div class="career-info-card">
-      <div class="career-info-item">
-        <span class="career-info-label">职业生涯时间</span>
-        <span class="career-info-value">{{ careerData.career_summary.date_range }}</span>
-      </div>
-      <div class="career-info-item">
-        <span class="career-info-label">参与赛季总数</span>
-        <span class="career-info-value">{{ getSeasonSummary() }}</span>
+      <!-- 职业生涯信息卡 -->
+      <div class="career-info-card flex-item">
+        <div class="career-info-item">
+          <span class="career-info-label">职业生涯时间</span>
+          <span class="career-info-value">{{ careerData.career_summary.date_range }}</span>
+        </div>
+        <div class="career-info-item">
+          <span class="career-info-label">参与赛季总数</span>
+          <span class="career-info-value">{{ getSeasonSummary() }}</span>
+        </div>
       </div>
     </div>
 
@@ -141,17 +140,17 @@
           <tbody>
             <tr v-for="match in paginatedMatches" :key="match.match_id">
               <td>{{ match.match_date }}</td>
-              <td>{{ match.season_name || match.season_id }}</td>
+              <td>{{ getMatchName(match.season_id) }}</td>
               <td>{{ match.team_name }}</td>
               <td>{{ match.opponent_team_name }}</td>
               <td class="center">
-                <strong>{{ match.total_games }}</strong>
+                <strong>{{ match.total_battles }}</strong>
               </td>
               <td class="center">
                 <span class="win-number">{{ match.wins }}</span>
               </td>
               <td class="center">
-                <span class="lose-number">{{ match.losses }}</span>
+                <span class="lose-number">{{ match.loses }}</span>
               </td>
               <td class="center">
                 <span :class="['win-badge', match.match_is_win ? 'win' : 'lose']">
@@ -232,7 +231,7 @@
         </thead>
         <tbody>
           <tr v-for="season in filteredSeasonStats" :key="season.season_id">
-            <td>{{ season.season_name || season.season_id }}</td>
+            <td>{{ getMatchName(season.season_id) }}</td>
             <td class="center">
               <strong>{{ season.battles }}</strong>
             </td>
@@ -412,6 +411,14 @@ const getSeasonSummary = () => {
   return `${total} 个赛季（联赛：${leagueCount}，杯赛：${cupCount}）`;
 };
 
+const getMatchName = (matchId) => {
+  const matchTextMap = {
+    KPL2026S1: '2026KPL春季赛',
+    KCC2025: '2025挑战者杯',
+  };
+  return matchTextMap[matchId];
+};
+
 onMounted(async () => {
   try {
     const res = await axios.get('/api/player/career');
@@ -422,497 +429,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<style scoped>
-.result-section {
-  padding: 40px;
-}
-
-.result-header {
-  border-bottom: 3px solid #2a5298;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  display: flex;
-}
-
-.result-title {
-  color: #333;
-  font-size: 24px;
-  font-weight: 700;
-}
-
-/* 赛季筛选 */
-.season-filter-container {
-  z-index: 100;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px solid #dee2e6;
-  border-radius: 10px;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 25px;
-  padding: 15px 20px;
-  display: flex;
-}
-
-.season-filter-btn {
-  color: #2a5298;
-  cursor: pointer;
-  background: #fff;
-  border: 2px solid #2a5298;
-  border-radius: 8px;
-  min-width: 110px;
-  padding: 10px 25px;
-  font-size: 15px;
-  font-weight: 700;
-  transition: all 0.3s;
-}
-
-.season-filter-btn:hover {
-  background: #f0f4f8;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px #2a529833;
-}
-
-.season-filter-btn.active {
-  color: #fff;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-}
-
-/* 选手卡片 */
-.player-card-container {
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 30px;
-  margin-bottom: 40px;
-  display: grid;
-}
-
-.player-card-container.single {
-  grid-template-columns: 1fr;
-}
-
-.player-card {
-  color: #fff;
-  text-align: center;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  border-radius: 15px;
-  padding: 25px;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.player-card img {
-  object-fit: cover;
-  border: 4px solid #fff;
-  border-radius: 50%;
-  width: 100px;
-  height: 100px;
-  margin-bottom: 15px;
-}
-
-.player-card-name {
-  margin-bottom: 8px;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.player-card-info {
-  opacity: 0.9;
-  font-size: 14px;
-  margin: 4px 0;
-}
-
-/* 职业生涯信息卡 */
-.career-info-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px solid #dee2e6;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  padding: 20px;
-}
-
-.career-info-item {
-  border-bottom: 1px solid #dee2e6;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 8px 0;
-  display: flex;
-}
-
-.career-info-item:last-child {
-  border-bottom: none;
-}
-
-.career-info-label {
-  color: #666;
-  flex-shrink: 0;
-  min-width: 100px;
-  padding-right: 20px;
-  font-size: 14px;
-}
-
-.career-info-value {
-  color: #333;
-  text-align: right;
-  flex: 1;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* 数据概览卡片 */
-.summary-cards {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
-  display: grid;
-}
-
-.summary-card {
-  text-align: center;
-  background: #1e3c720d;
-  border: 2px solid #1e3c721a;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s;
-}
-
-.summary-card:hover {
-  border-color: #1e3c724d;
-  box-shadow: 0 4px 12px #1e3c721a;
-}
-
-.summary-card-value {
-  color: #2a5298;
-  margin-bottom: 8px;
-  font-size: 32px;
-  font-weight: 700;
-}
-
-.summary-card-value.win {
-  color: #28a745;
-}
-
-.summary-card-value.lose {
-  color: #dc3545;
-}
-
-.summary-card-label {
-  color: #666;
-  font-size: 14px;
-}
-
-/* 分类标签 */
-.data-category-tabs {
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  display: flex;
-}
-
-.category-tab {
-  color: #2a5298;
-  background: #fff;
-  border: 2px solid #2a5298;
-  border-radius: 8px;
-  padding: 10px 25px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.category-tab.active {
-  color: #fff;
-  background: #2a5298;
-}
-
-/* 章节标题 */
-.section-title {
-  color: #333;
-  border-bottom: 2px solid #2a5298;
-  margin: 30px 0 20px;
-  padding-bottom: 10px;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-/* 表格 */
-.table-container {
-  margin-bottom: 30px;
-  overflow-x: auto;
-}
-
-.data-table {
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.data-table thead {
-  color: #fff;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-}
-
-.data-table th {
-  text-align: left;
-  padding: 15px;
-  font-weight: 700;
-}
-
-.data-table th.center,
-.data-table td.center {
-  text-align: center;
-}
-
-.data-table td {
-  border-bottom: 1px solid #f0f0f0;
-  padding: 12px 15px;
-}
-
-.data-table tbody tr:hover {
-  background: #f8f9fa;
-}
-
-/* 英雄信息 */
-.hero-info {
-  align-items: center;
-  gap: 8px;
-  display: flex;
-}
-
-.hero-icon {
-  object-fit: cover;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  width: 32px;
-  height: 32px;
-}
-
-/* 胜负徽章 */
-.win-badge {
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  display: inline-block;
-}
-
-.win-badge.win {
-  color: #155724;
-  background: #d4edda;
-}
-
-.win-badge.lose {
-  color: #721c24;
-  background: #f8d7da;
-}
-
-/* 数字样式 */
-.win-number {
-  color: #28a745;
-  font-weight: 700;
-}
-
-.lose-number {
-  color: #dc3545;
-  font-weight: 700;
-}
-
-/* 分页 */
-.pagination-container {
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 20px 0;
-  display: flex;
-}
-
-.pagination-btn {
-  color: #2a5298;
-  cursor: pointer;
-  background: #fff;
-  border: 2px solid #2a5298;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 700;
-  transition: all 0.3s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  color: #fff;
-  background: #2a5298;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.pagination-btn.active {
-  color: #fff;
-  background: #2a5298;
-}
-
-.pagination-info {
-  color: #666;
-  margin: 0 10px;
-  font-size: 14px;
-}
-
-/* 加载状态 */
-.loading {
-  text-align: center;
-  color: #2a5298;
-  padding: 60px 40px;
-}
-
-.loading-spinner {
-  border: 6px solid #f3f3f3;
-  border-top-color: #2a5298;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  margin-bottom: 20px;
-  animation: 1s linear infinite spin;
-  display: inline-block;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  margin-bottom: 10px;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* 滚动锚点 */
-.scroll-anchor {
-  scroll-margin-top: 20px;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .result-section {
-    padding: 20px 15px;
-  }
-
-  .result-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .result-title {
-    font-size: 20px;
-  }
-
-  .season-filter-container {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 10px;
-  }
-
-  .season-filter-btn {
-    flex: 1;
-    min-width: calc(33.333% - 6px);
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .player-card {
-    padding: 20px;
-  }
-
-  .player-card img {
-    width: 80px;
-    height: 80px;
-  }
-
-  .player-card-name {
-    font-size: 18px;
-  }
-
-  .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 25px;
-  }
-
-  .summary-card {
-    padding: 15px 12px;
-  }
-
-  .summary-card-value {
-    font-size: 24px;
-  }
-
-  .summary-card-label {
-    font-size: 12px;
-  }
-
-  .data-table {
-    min-width: 600px;
-    font-size: 13px;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: 10px 8px;
-  }
-
-  .hero-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .career-info-card {
-    margin-bottom: 20px;
-    padding: 15px;
-  }
-
-  .career-info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 6px 0;
-  }
-
-  .career-info-label {
-    min-width: auto;
-    margin-bottom: 5px;
-    padding-right: 0;
-    font-size: 13px;
-  }
-
-  .career-info-value {
-    text-align: left;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .season-filter-btn {
-    min-width: 100%;
-    font-size: 14px;
-  }
-
-  .data-table {
-    min-width: 500px;
-    font-size: 12px;
-  }
-}
-</style>

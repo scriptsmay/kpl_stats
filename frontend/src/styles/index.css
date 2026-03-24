@@ -1,0 +1,7 @@
+/* KPL Stats 全局样式 */
+
+@import './variables.css';
+@import './components.css';
+@import './layouts.css';
+@import './pages.css';
+@import './admin.css';

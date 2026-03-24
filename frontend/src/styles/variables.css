@@ -1,0 +1,168 @@
+/* 全局变量 */
+:root {
+  /* 主色调 - 渐变蓝 */
+  --primary-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  --primary-dark: #1e3c72;
+  --primary-medium: #2a5298;
+  --primary-light: #7e8ba3;
+
+  /* 功能色 */
+  --success-color: #28a745;
+  --success-bg: #d4edda;
+  --success-text: #155724;
+  --danger-color: #dc3545;
+  --danger-bg: #f8d7da;
+  --danger-text: #721c24;
+  --warning-color: #ffc107;
+  --info-color: #0d6efd;
+  --orange-color: #fd7e14;
+
+  /* 中性色 */
+  --white: #ffffff;
+  --gray-50: #f8f9fa;
+  --gray-100: #e9ecef;
+  --gray-200: #dee2e6;
+  --gray-300: #ced4da;
+  --gray-400: #adb5bd;
+  --gray-500: #6c757d;
+  --gray-600: #666666;
+  --gray-700: #333333;
+  --gray-800: #2a2a2a;
+  --gray-900: #1a1a1a;
+
+  /* 背景色 */
+  --bg-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+  --bg-card: #ffffff;
+  --bg-section: #f8f9fa;
+
+  /* 边框 */
+  --border-color: #dee2e6;
+  --border-light: #f0f0f0;
+  --border-radius-sm: 6px;
+  --border-radius-md: 10px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 15px;
+  --border-radius-xxl: 20px;
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 4px 12px rgba(26, 60, 114, 0.1);
+
+  /* 间距 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 30px;
+  --spacing-xxxl: 40px;
+
+  /* 字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 16px;
+  --font-size-xxl: 18px;
+  --font-size-xxxl: 20px;
+  --font-size-title: 24px;
+  --font-size-heading: 32px;
+
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 过渡 */
+  --transition-fast: 0.2s;
+  --transition-base: 0.3s;
+
+  /* 断点 */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+}
+
+/* 全局重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--gray-700);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 通用工具类 */
+.text-center {
+  text-align: center;
+}
+
+.text-success {
+  color: var(--success-color);
+}
+
+.text-danger {
+  color: var(--danger-color);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+/* flex 布局 */
+.flex {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+.flex-item {
+  flex: 1;
+}
+.flex-column {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.flex-grow {
+  flex-grow: 1;
+}
+.flex-shrink {
+  flex-shrink: 1;
+}
+.flex-center {
+  justify-content: center;
+  align-items: center;
+}
+.flex-between {
+  justify-content: space-between;
+}
+.flex-around {
+  justify-content: space-around;
+}
+.flex-end {
+  justify-content: flex-end;
+}
+.flex-start {
+  justify-content: flex-start;
+}
+.flex-reverse {
+  flex-direction: row-reverse;
+}

@@ -1,0 +1,141 @@
+/* 管理面板样式 */
+
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.admin-container h1 {
+  text-align: center;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-xxxl);
+}
+
+.admin-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-card h2 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xxl);
+  color: var(--gray-700);
+  border-bottom: 2px solid var(--primary-medium);
+  padding-bottom: var(--spacing-sm);
+}
+
+.status-info p {
+  margin: var(--spacing-sm) 0;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.status-info .label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-600);
+  min-width: 80px;
+  padding-right: var(--spacing-sm);
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-badge.valid {
+  color: var(--success-text);
+  background: var(--success-bg);
+}
+
+.status-badge.invalid {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: var(--white);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+  background: var(--danger-color);
+  color: var(--white);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #ff7875;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+
+.message {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  margin-top: var(--spacing-lg);
+  text-align: center;
+}
+
+.message.success {
+  color: var(--success-text);
+  background: var(--success-bg);
+}
+
+.message.error {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: var(--spacing-sm);
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
