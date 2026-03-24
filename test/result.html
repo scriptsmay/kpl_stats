@@ -1,0 +1,585 @@
+<div id="result-section" class="result-section" style="display: block">
+  <div class="result-header">
+    <div class="result-title">选手生涯数据</div>
+  </div>
+
+  <div class="season-filter-container" id="seasonFilterContainer">
+    <button class="season-filter-btn active" data-filter="all" onclick="filterSeasonType('all')">📊 全部赛季</button>
+    <button class="season-filter-btn" data-filter="league" onclick="filterSeasonType('league')">🏆 联赛</button>
+    <button class="season-filter-btn" data-filter="cup" onclick="filterSeasonType('cup')">🏅 杯赛</button>
+  </div>
+
+  <div class="player-card-container single">
+    <div class="player-card">
+      <img
+        src="https://hero-wind.oss-cn-shanghai.aliyuncs.com/KPL/KPL_Play_images/KPL2026S1/KSG.无言.png"
+        alt="KSG.无言"
+        onerror="this.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'"
+      />
+      <div class="player-card-name">KSG.无言</div>
+      <div class="player-card-info">KSG</div>
+      <div class="player-card-info">位置未知</div>
+      <div class="player-card-info">筛选: 全部赛季</div>
+    </div>
+  </div>
+
+  <div class="career-info-card">
+    <div class="career-info-item">
+      <span class="career-info-label">职业生涯时间</span>
+      <span class="career-info-value">2025-12-09 至 2026-03-21</span>
+    </div>
+    <div class="career-info-item">
+      <span class="career-info-label">参与赛季总数</span>
+      <span class="career-info-value">2 个赛季（联赛: 1，杯赛: 1）</span>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-card-value">83</div>
+      <div class="summary-card-label">生涯总对局</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value win">49</div>
+      <div class="summary-card-label">获胜对局</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value lose">34</div>
+      <div class="summary-card-label">失败对局</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">59.0%</div>
+      <div class="summary-card-label">对局胜率</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">146</div>
+      <div class="summary-card-label">生涯总击杀</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">134</div>
+      <div class="summary-card-label">生涯总死亡</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">325</div>
+      <div class="summary-card-label">生涯总助攻</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">3.51</div>
+      <div class="summary-card-label">生涯KDA比</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">1.76</div>
+      <div class="summary-card-label">场均击杀</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">1.61</div>
+      <div class="summary-card-label">场均死亡</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">3.92</div>
+      <div class="summary-card-label">场均助攻</div>
+    </div>
+  </div>
+
+  <div class="data-category-tabs">
+    <div class="category-tab active">大场数据</div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-card-value">19</div>
+      <div class="summary-card-label">总大场数</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value win">12</div>
+      <div class="summary-card-label">大场获胜</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value lose">7</div>
+      <div class="summary-card-label">大场失败</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-value">63.2%</div>
+      <div class="summary-card-label">大场胜率</div>
+    </div>
+  </div>
+
+  <div id="cooperation-match-container">
+    <div id="cooperation-match-anchor" class="scroll-anchor"></div>
+    <div class="section-title">大场记录 (共19场)</div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>比赛日期</th>
+            <th>赛季</th>
+            <th>我方战队</th>
+            <th>对手战队</th>
+            <th class="center">小局数</th>
+            <th class="center">获胜小局</th>
+            <th class="center">失败小局</th>
+            <th class="center">大场结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-03-21</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>北京WB</td>
+            <td class="center"><strong>4</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">1</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-03-18</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>重庆狼队</td>
+            <td class="center"><strong>5</strong></td>
+            <td class="center"><span class="win-number">2</span></td>
+            <td class="center"><span class="lose-number">3</span></td>
+            <td class="center">
+              <span class="win-badge lose"> 失败 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-03-14</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>成都AG超玩会</td>
+            <td class="center"><strong>4</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">1</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-03-11</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>北京JDG</td>
+            <td class="center"><strong>5</strong></td>
+            <td class="center"><span class="win-number">2</span></td>
+            <td class="center"><span class="lose-number">3</span></td>
+            <td class="center">
+              <span class="win-badge lose"> 失败 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-03-08</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>深圳DYG</td>
+            <td class="center"><strong>4</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">1</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-02-26</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>深圳DYG</td>
+            <td class="center"><strong>4</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">1</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-02-11</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>北京WB</td>
+            <td class="center"><strong>5</strong></td>
+            <td class="center"><span class="win-number">2</span></td>
+            <td class="center"><span class="lose-number">3</span></td>
+            <td class="center">
+              <span class="win-badge lose"> 失败 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-02-06</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>重庆狼队</td>
+            <td class="center"><strong>3</strong></td>
+            <td class="center"><span class="win-number">0</span></td>
+            <td class="center"><span class="lose-number">3</span></td>
+            <td class="center">
+              <span class="win-badge lose"> 失败 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-02-04</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>桐乡情久</td>
+            <td class="center"><strong>3</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">0</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+
+          <tr>
+            <td>2026-01-31</td>
+            <td>KPL2026春季赛</td>
+            <td>KSG</td>
+            <td>武汉eStarPro</td>
+            <td class="center"><strong>3</strong></td>
+            <td class="center"><span class="win-number">3</span></td>
+            <td class="center"><span class="lose-number">0</span></td>
+            <td class="center">
+              <span class="win-badge win"> 胜利 </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination-container">
+      <button class="pagination-btn" disabled="" onclick="changePageCooperationMatch(0)">上一页</button
+      ><button class="pagination-btn active" onclick="changePageCooperationMatch(1)">1</button
+      ><button class="pagination-btn" onclick="changePageCooperationMatch(2)">2</button
+      ><button class="pagination-btn" onclick="changePageCooperationMatch(2)">下一页</button
+      ><span class="pagination-info">共 2 页</span>
+    </div>
+  </div>
+
+  <div class="section-title">效力战队统计</div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>战队名称</th>
+          <th class="center">对局数</th>
+          <th class="center">胜局</th>
+          <th class="center">败局</th>
+          <th class="center">胜率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>KSG</strong></td>
+          <td class="center">57</td>
+          <td class="center"><span class="win-number">35</span></td>
+          <td class="center"><span class="lose-number">22</span></td>
+          <td class="center"><strong>61.4%</strong></td>
+        </tr>
+
+        <tr>
+          <td><strong>青训破军</strong></td>
+          <td class="center">26</td>
+          <td class="center"><span class="win-number">14</span></td>
+          <td class="center"><span class="lose-number">12</span></td>
+          <td class="center"><strong>53.8%</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">赛季数据统计</div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>赛季</th>
+          <th class="center">对局数</th>
+          <th class="center">胜局</th>
+          <th class="center">败局</th>
+          <th class="center">胜率</th>
+          <th class="center">击杀/死亡/助攻</th>
+          <th class="center">KDA比</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2025王者荣耀挑战者杯</td>
+          <td class="center"><strong>26</strong></td>
+          <td class="center"><span class="win-number">14</span></td>
+          <td class="center"><span class="lose-number">12</span></td>
+          <td class="center">53.8%</td>
+          <td class="center">42/38/92</td>
+          <td class="center"><strong>3.53</strong></td>
+        </tr>
+
+        <tr>
+          <td>KPL2026春季赛</td>
+          <td class="center"><strong>57</strong></td>
+          <td class="center"><span class="win-number">35</span></td>
+          <td class="center"><span class="lose-number">22</span></td>
+          <td class="center">61.4%</td>
+          <td class="center">104/96/233</td>
+          <td class="center"><strong>3.51</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">英雄使用统计 (共13个英雄)</div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>英雄</th>
+          <th class="center">使用次数</th>
+          <th class="center">胜局</th>
+          <th class="center">败局</th>
+          <th class="center">胜率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/536.jpg"
+                alt="夏洛特"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>夏洛特</strong>
+            </div>
+          </td>
+          <td class="center"><strong>17</strong></td>
+          <td class="center"><span class="win-number">13</span></td>
+          <td class="center"><span class="lose-number">4</span></td>
+          <td class="center"><strong>76.5%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/503.jpg"
+                alt="狂铁"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>狂铁</strong>
+            </div>
+          </td>
+          <td class="center"><strong>12</strong></td>
+          <td class="center"><span class="win-number">8</span></td>
+          <td class="center"><span class="lose-number">4</span></td>
+          <td class="center"><strong>66.7%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/518.jpg"
+                alt="马超"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>马超</strong>
+            </div>
+          </td>
+          <td class="center"><strong>11</strong></td>
+          <td class="center"><span class="win-number">4</span></td>
+          <td class="center"><span class="lose-number">7</span></td>
+          <td class="center"><strong>36.4%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/140.jpg"
+                alt="关羽"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>关羽</strong>
+            </div>
+          </td>
+          <td class="center"><strong>10</strong></td>
+          <td class="center"><span class="win-number">8</span></td>
+          <td class="center"><span class="lose-number">2</span></td>
+          <td class="center"><strong>80.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/537.jpg"
+                alt="司空震"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>司空震</strong>
+            </div>
+          </td>
+          <td class="center"><strong>9</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">7</span></td>
+          <td class="center"><strong>22.2%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/128.jpg"
+                alt="曹操"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>曹操</strong>
+            </div>
+          </td>
+          <td class="center"><strong>5</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">3</span></td>
+          <td class="center"><strong>40.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/527.jpg"
+                alt="蒙恬"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>蒙恬</strong>
+            </div>
+          </td>
+          <td class="center"><strong>5</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">3</span></td>
+          <td class="center"><strong>40.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/558.jpg"
+                alt="影"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>影</strong>
+            </div>
+          </td>
+          <td class="center"><strong>5</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">3</span></td>
+          <td class="center"><strong>40.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/564.jpg"
+                alt="姬小满"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>姬小满</strong>
+            </div>
+          </td>
+          <td class="center"><strong>2</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">0</span></td>
+          <td class="center"><strong>100.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/123.jpg"
+                alt="吕布"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>吕布</strong>
+            </div>
+          </td>
+          <td class="center"><strong>2</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">0</span></td>
+          <td class="center"><strong>100.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/172.jpg"
+                alt="蚩奼"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>蚩奼</strong>
+            </div>
+          </td>
+          <td class="center"><strong>2</strong></td>
+          <td class="center"><span class="win-number">1</span></td>
+          <td class="center"><span class="lose-number">1</span></td>
+          <td class="center"><strong>50.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/120.jpg"
+                alt="白起"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>白起</strong>
+            </div>
+          </td>
+          <td class="center"><strong>2</strong></td>
+          <td class="center"><span class="win-number">2</span></td>
+          <td class="center"><span class="lose-number">0</span></td>
+          <td class="center"><strong>100.0%</strong></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="hero-info">
+              <img
+                src="https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/510.jpg"
+                alt="孙策"
+                class="hero-icon"
+                onerror="this.style.display = 'none'"
+              />
+              <strong>孙策</strong>
+            </div>
+          </td>
+          <td class="center"><strong>1</strong></td>
+          <td class="center"><span class="win-number">1</span></td>
+          <td class="center"><span class="lose-number">0</span></td>
+          <td class="center"><strong>100.0%</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+# FastAPI 核心框架
+fastapi==0.110.0
+uvicorn[standard]==0.28.0
+
+# HTTP 请求客户端
+httpx==0.27.0
+
+# 环境变量管理
+python-dotenv==1.0.1
+
+# 可选：如果需要更多功能
+# python-multipart==0.0.9  # 文件上传支持
+# apscheduler==3.10.4       # 定时任务

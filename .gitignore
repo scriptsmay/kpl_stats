@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Conda
+*.conda
+.conda/
+conda-meta/
+
+# Python 环境变量
+backend/.env
+
+# 缓存文件（自动生成）
+backend/cache.json
+
+# Node.js
+node_modules/
+dist/
+.DS_Store
+
+# 前端环境变量（本地配置）
+frontend/.env*.local
+frontend/.env.production
+
+# 日志
+*.log
+
+# IDE
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# 测试文件（如包含敏感数据）
+test/*.json
+!test/.gitkeep
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
