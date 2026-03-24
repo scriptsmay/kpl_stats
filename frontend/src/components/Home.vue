@@ -312,8 +312,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { getCareerData } from '../api/stats';
+import { ref, computed, onMounted } from 'vue';
+import { getCareerData, getSeasonNameMap } from '../api/stats';
 
 const careerData = ref(null);
 const seasonFilter = ref('all');
@@ -321,6 +321,7 @@ const currentPage = ref(1);
 const pageSize = 10;
 const loading = ref(false);
 const error = ref(null);
+const seasonNameMap = ref({});
 
 const playerAvatar = ref('https://hero-wind.oss-cn-shanghai.aliyuncs.com/KPL/KPL_Play_images/KPL2026S1/KSG.无言.png');
 
@@ -346,6 +347,22 @@ const loadData = async () => {
   }
 };
 
+// 加载赛季名称映射
+const loadSeasonNameMap = async () => {
+  try {
+    const res = await getSeasonNameMap();
+    seasonNameMap.value = res.data.data || {};
+    console.log('赛季名称映射已加载', seasonNameMap.value);
+  } catch (err) {
+    console.error('加载赛季名称映射失败', err);
+    // 使用默认映射作为降级
+    seasonNameMap.value = {
+      KCC2025: '2025 挑战者杯',
+      KPL2026S1: '2026 年春季赛',
+    };
+  }
+};
+
 // 筛选赛季类型
 const filterSeasonType = async (type) => {
   if (type === seasonFilter.value) return;
@@ -354,12 +371,16 @@ const filterSeasonType = async (type) => {
 };
 
 const getSeasonName = (seasonId) => {
-  const map = {
-    KCC2025: '2025挑战者杯',
-    KPL2026S1: '2026赛季赛',
-    other: '其他',
+  // 优先使用动态获取的赛季名称映射
+  if (seasonNameMap.value[seasonId]) {
+    return seasonNameMap.value[seasonId];
+  }
+  // 降级处理：如果没有映射，返回原始 ID 或默认名称
+  const defaultMap = {
+    KCC2025: '2025 挑战者杯',
+    KPL2026S1: '2026 年春季赛',
   };
-  return map[seasonId] || '其他';
+  return defaultMap[seasonId] || seasonId;
 };
 
 // 筛选后的比赛详情
@@ -430,6 +451,7 @@ const getSeasonSummary = () => {
 };
 
 onMounted(() => {
+  loadSeasonNameMap();
   loadData();
 });
 </script>

@@ -183,3 +183,6 @@ curl -X DELETE "http://localhost:8000/api/admin/cache"
 - 项目使用 **Conda** 作为默认 Python 环境管理器（见 `.vscode/settings.json`）
 - 缓存文件位于 `backend/cache.json`（自动生成）
 - 运行前必须在 `backend/.env` 中配置第三方 API 地址
+
+## Qwen Added Memories
+- 用户手动修正了 Home.vue 中的数据显示字段，以后修改代码时不要改动用户已修正的 JS 字段映射

@@ -25,12 +25,20 @@ THIRD_PARTY_API_URL = os.getenv("THIRD_PARTY_API_URL", "https://api.example.com/
 API_KEY = os.getenv("API_KEY", "")
 DATA_DIR = Path(__file__).parent / "data"
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小时
+SEASONS_API_URL = os.getenv("SEASONS_API_URL", "http://47.102.210.150:5006/seasons/list")
 
 # 确保 data 目录存在
 DATA_DIR.mkdir(exist_ok=True)
 
 # 赛季类型常量
 SEASON_TYPES = ['all', 'league', 'cup']
+
+# 赛季名称缓存（内存缓存）
+season_name_cache = {
+    "data": None,
+    "timestamp": None,
+    "ttl_seconds": 86400  # 24 小时缓存
+}
 
 def get_cache_file(season_type: str = 'all') -> Path:
     """获取指定赛季类型的缓存文件路径"""
@@ -116,6 +124,53 @@ def get_archive_list():
 
     # 按日期降序排序
     return sorted(archives, key=lambda x: x["date"], reverse=True)
+
+def is_season_cache_valid():
+    """检查赛季名称缓存是否有效"""
+    if not season_name_cache["data"] or not season_name_cache["timestamp"]:
+        return False
+    cache_time = datetime.fromisoformat(season_name_cache["timestamp"])
+    return (datetime.now() - cache_time).total_seconds() < season_name_cache["ttl_seconds"]
+
+async def fetch_seasons_from_api(project: str = 'KPL'):
+    """从第三方 API 获取赛季列表"""
+    try:
+        async with httpx.AsyncClient() as client:
+            params = {"project": project}
+            print(f"[{datetime.now()}] 开始请求赛季列表：{SEASONS_API_URL}, params: {params}")
+            response = await client.get(
+                SEASONS_API_URL,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            seasons_data = response.json()
+            print(f"[{datetime.now()}] 赛季列表请求成功，共 {len(seasons_data)} 个赛季")
+            
+            # 更新缓存
+            season_name_cache["data"] = seasons_data
+            season_name_cache["timestamp"] = datetime.now().isoformat()
+            
+            return seasons_data
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="赛季列表 API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"赛季列表 API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取赛季列表失败：{str(e)}")
+
+def get_season_name_map():
+    """获取赛季 ID 到名称的映射"""
+    if not season_name_cache["data"]:
+        return {}
+    
+    name_map = {}
+    for season in season_name_cache["data"]:
+        tournament_id = season.get("tournament_id", "")
+        tournament_name = season.get("tournament_name", "")
+        if tournament_id:
+            name_map[tournament_id] = tournament_name
+    return name_map
 
 async def fetch_from_third_party(season_type: str = 'all'):
     """从第三方 API 获取数据"""
@@ -459,3 +514,54 @@ async def health_check():
             "season_types": SEASON_TYPES
         }
     }
+
+@app.get("/api/seasons/list")
+async def get_seasons_list(
+    project: str = Query('KPL', description="项目名称，如 KPL")
+):
+    """
+    获取赛季列表（带缓存）
+    """
+    try:
+        # 检查缓存是否有效
+        if is_season_cache_valid():
+            return {
+                "code": 200,
+                "message": "数据来自缓存",
+                "data": season_name_cache["data"],
+                "from_cache": True
+            }
+        
+        # 从第三方 API 获取
+        data = await fetch_seasons_from_api(project)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": data,
+            "from_cache": False
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取赛季列表失败：{str(e)}")
+
+@app.get("/api/seasons/name_map")
+async def get_season_name_map_api():
+    """
+    获取赛季 ID 到名称的映射（方便前端使用）
+    """
+    try:
+        # 检查缓存是否有效，无效则获取
+        if not is_season_cache_valid():
+            await fetch_seasons_from_api('KPL')
+        
+        name_map = get_season_name_map()
+        return {
+            "code": 200,
+            "message": "赛季名称映射",
+            "data": name_map
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取赛季名称映射失败：{str(e)}")

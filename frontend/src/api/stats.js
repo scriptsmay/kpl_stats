@@ -47,3 +47,13 @@ export const getArchive = (date, seasonType = 'all') =>
   api.get(`/admin/archive/${date}`, { 
     params: { season_type: seasonType } 
   });
+
+// 获取赛季列表
+export const getSeasonsList = (project = 'KPL') => 
+  api.get('/seasons/list', { 
+    params: { project } 
+  });
+
+// 获取赛季名称映射
+export const getSeasonNameMap = () => 
+  api.get('/seasons/name_map');

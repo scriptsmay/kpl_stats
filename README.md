@@ -199,6 +199,55 @@ GET /api/admin/archive/{date}?season_type=all
 GET /api/health
 ```
 
+### 获取赛季列表
+
+```
+GET /api/seasons/list?project=KPL
+```
+
+**参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| project | string | 否 | 项目名称，默认 KPL |
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "数据来自缓存",
+  "data": [
+    {
+      "tournament_id": "KPL2026S1",
+      "tournament_name": "KPL2026 春季赛",
+      "project": "KPL",
+      "season_type": "联赛",
+      "is_latest": 1
+    }
+  ],
+  "from_cache": true
+}
+```
+
+### 获取赛季名称映射
+
+```
+GET /api/seasons/name_map
+```
+
+返回赛季 ID 到名称的映射，方便前端使用。
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "赛季名称映射",
+  "data": {
+    "KPL2026S1": "KPL2026 春季赛",
+    "KCC2025": "2025 挑战者杯"
+  }
+}
+```
+
 ## 环境变量配置
 
 ### 后端 (backend/.env)
