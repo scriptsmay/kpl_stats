@@ -1,137 +1,256 @@
 <template>
-  <div class="admin-panel">
-    <h3>数据管理</h3>
-    <div class="button-group">
-      <button @click="refreshData" :disabled="loading">
-        {{ loading ? '刷新中...' : '手动刷新数据' }}
-      </button>
-      <button @click="clearCacheData" :disabled="loading">清除缓存</button>
-      <button @click="showCacheInfo">查看缓存信息</button>
+  <div class="admin-container">
+    <h1>数据管理</h1>
+    
+    <div class="admin-card">
+      <h2>缓存状态</h2>
+      <div class="status-info" v-if="cacheInfo">
+        <p><span class="label">缓存文件：</span>{{ cacheInfo.cache_file }}</p>
+        <p><span class="label">缓存时间：</span>{{ cacheInfo.cache_time }}</p>
+        <p><span class="label">状态：</span>
+          <span :class="['status-badge', cacheInfo.is_valid ? 'valid' : 'invalid']">
+            {{ cacheInfo.is_valid ? '有效' : '已过期' }}
+          </span>
+        </p>
+        <p><span class="label">过期时间：</span>{{ cacheInfo.expires_in }}</p>
+        <p><span class="label">文件大小：</span>{{ formatFileSize(cacheInfo.file_size) }}</p>
+      </div>
+      <p v-else>加载中...</p>
     </div>
 
-    <div v-if="cacheInfo" class="cache-info">
-      <h4>缓存信息</h4>
-      <pre>{{ JSON.stringify(cacheInfo, null, 2) }}</pre>
+    <div class="admin-card">
+      <h2>操作</h2>
+      <div class="action-buttons">
+        <button @click="refreshCache" :disabled="loading" class="btn btn-primary">
+          {{ loading ? '刷新中...' : '刷新缓存' }}
+        </button>
+        <button @click="clearCache" :disabled="loading" class="btn btn-danger">
+          清除缓存
+        </button>
+        <button @click="goHome" class="btn btn-secondary">
+          返回首页
+        </button>
+      </div>
     </div>
 
-    <div v-if="message" :class="['message', messageType]">
+    <div class="message" v-if="message" :class="messageType">
       {{ message }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { refreshCache, clearCache, getCacheInfo, getCareerData } from '../api/stats';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { refreshCache, getCacheInfo, clearCache as deleteCache } from '../api/stats'
 
-const loading = ref(false);
-const message = ref('');
-const messageType = ref('');
-const cacheInfo = ref(null);
+const router = useRouter()
+const cacheInfo = ref(null)
+const loading = ref(false)
+const message = ref('')
+const messageType = ref('success')
 
-const showMessage = (text, type = 'success') => {
-  message.value = text;
-  messageType.value = type;
-  setTimeout(() => {
-    message.value = '';
-  }, 3000);
-};
-
-const refreshData = async () => {
-  loading.value = true;
+const loadCacheInfo = async () => {
   try {
-    const res = await refreshCache(true);
-    showMessage(`刷新成功！更新时间：${res.data.data.refresh_time}`);
-    // 刷新后重新加载页面数据
-    window.location.reload();
+    const res = await getCacheInfo()
+    cacheInfo.value = res.data.data
   } catch (error) {
-    showMessage(`刷新失败：${error.message}`, 'error');
+    console.error('获取缓存信息失败', error)
+    message.value = '获取缓存信息失败：' + error.message
+    messageType.value = 'error'
+  }
+}
+
+const refreshCacheHandler = async () => {
+  loading.value = true
+  message.value = ''
+  try {
+    const res = await refreshCache(true)
+    message.value = res.data.message || '缓存刷新成功'
+    messageType.value = 'success'
+    await loadCacheInfo()
+  } catch (error) {
+    console.error('刷新缓存失败', error)
+    message.value = '刷新缓存失败：' + error.message
+    messageType.value = 'error'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const clearCacheData = async () => {
-  loading.value = true;
+const clearCacheHandler = async () => {
+  if (!confirm('确定要清除缓存吗？')) return
+  
+  loading.value = true
+  message.value = ''
   try {
-    const res = await clearCache();
-    showMessage(res.data.message);
+    const res = await deleteCache()
+    message.value = res.data.message || '缓存已清除'
+    messageType.value = 'success'
+    await loadCacheInfo()
   } catch (error) {
-    showMessage(`清除失败：${error.message}`, 'error');
+    console.error('清除缓存失败', error)
+    message.value = '清除缓存失败：' + error.message
+    messageType.value = 'error'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const showCacheInfo = async () => {
-  try {
-    const res = await getCacheInfo();
-    cacheInfo.value = res.data.data;
-  } catch (error) {
-    showMessage(`获取失败：${error.message}`, 'error');
-  }
-};
+const goHome = () => {
+  router.push('/')
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+onMounted(() => {
+  loadCacheInfo()
+})
 </script>
 
 <style scoped>
-.admin-panel {
-  background: white;
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
   padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.button-group {
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.admin-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-card h2 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #333;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+.status-info p {
+  margin: 12px 0;
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
 }
 
-button {
-  padding: 8px 16px;
-  background: #007bff;
-  color: white;
+.label {
+  font-weight: 600;
+  color: #666;
+  min-width: 80px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-badge.valid {
+  background: #e6f7e6;
+  color: #52c41a;
+}
+
+.status-badge.invalid {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 12px 24px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
-button:hover {
-  background: #0056b3;
-}
-
-button:disabled {
-  background: #ccc;
+.btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.cache-info {
-  background: #f5f5f5;
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
-.cache-info pre {
-  margin: 0;
-  font-size: 12px;
-  overflow-x: auto;
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+  background: #ff4d4f;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #ff7875;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #d9d9d9;
 }
 
 .message {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 4px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  text-align: center;
 }
 
 .message.success {
-  background: #d4edda;
-  color: #155724;
+  background: #e6f7e6;
+  color: #52c41a;
 }
 
 .message.error {
-  background: #f8d7da;
-  color: #721c24;
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 12px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
 }
 </style>

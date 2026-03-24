@@ -8,7 +8,10 @@
       "Bash(curl *)",
       "Bash(lsof *)",
       "Bash(sed *)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(npm install *)",
+      "Bash(rmdir *)",
+      "Bash(true)"
     ]
   }
 }
