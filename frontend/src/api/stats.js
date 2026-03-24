@@ -4,15 +4,46 @@ const api = axios.create({
   baseURL: '/api',
 });
 
-// 正常获取数据（使用缓存）
-export const getCareerData = (forceRefresh = false) =>
-  api.get('/player/career', { params: { force_refresh: forceRefresh } });
+// 获取选手生涯数据
+export const getCareerData = (seasonType = 'all', forceRefresh = false) =>
+  api.get('/player/career', { 
+    params: { 
+      season_type: seasonType,
+      force_refresh: forceRefresh 
+    } 
+  });
 
 // 手动刷新缓存
-export const refreshCache = (force = true) => api.post('/admin/refresh', null, { params: { force } });
+export const refreshCache = (seasonType = 'all', force = true) => 
+  api.post('/admin/refresh', null, { 
+    params: { 
+      season_type: seasonType,
+      force 
+    } 
+  });
 
-// 查看缓存信息
-export const getCacheInfo = () => api.get('/admin/cache_info');
+// 查看单个缓存信息
+export const getCacheInfo = (seasonType = 'all') => 
+  api.get('/admin/cache_info', { 
+    params: { season_type: seasonType } 
+  });
+
+// 查看所有缓存状态
+export const getAllCacheInfo = () => 
+  api.get('/admin/cache_list');
 
 // 清除缓存
-export const clearCache = () => api.delete('/admin/cache');
+export const clearCache = (seasonType = 'all') => 
+  api.delete('/admin/cache', { 
+    params: { season_type: seasonType } 
+  });
+
+// 获取存档列表
+export const getArchiveList = () => 
+  api.get('/admin/archive_list');
+
+// 获取指定日期存档
+export const getArchive = (date, seasonType = 'all') => 
+  api.get(`/admin/archive/${date}`, { 
+    params: { season_type: seasonType } 
+  });

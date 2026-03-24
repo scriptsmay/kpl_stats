@@ -23,8 +23,13 @@ backend/.env
 # 缓存文件（自动生成）
 backend/cache.json
 backend/data/cache.json
-# 每日存档文件（可选：如需保留历史数据，可删除此行并手动提交）
 backend/data/cache.*.json
+# 按赛季类型的缓存文件
+backend/data/cache.all.json
+backend/data/cache.league.json
+backend/data/cache.cup.json
+# 每日存档文件（可选：如需保留历史数据，可删除此行并手动提交）
+backend/data/cache.*.*.json
 
 # Node.js
 node_modules/

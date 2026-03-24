@@ -29,8 +29,12 @@ kpl_stats/
 │   ├── .env                 # 环境变量配置
 │   ├── .env.example         # 环境变量模板
 │   └── data/                # 数据目录（自动生成）
-│       ├── cache.json       # 当前缓存
-│       └── cache.YYYY-MM-DD.json  # 每日存档
+│       ├── cache.all.json       # 全部赛季缓存
+│       ├── cache.league.json    # 联赛缓存
+│       ├── cache.cup.json       # 杯赛缓存
+│       ├── cache.all.YYYY-MM-DD.json    # 全部赛季存档
+│       ├── cache.league.YYYY-MM-DD.json # 联赛存档
+│       └── cache.cup.YYYY-MM-DD.json    # 杯赛存档
 ├── frontend/                # 前端应用
 │   ├── index.html
 │   ├── package.json
@@ -110,30 +114,68 @@ npm run dev
 ### 获取选手数据
 
 ```
-GET /api/player/career?force_refresh=false
+GET /api/player/career?season_type=all&force_refresh=false
 ```
 
+**参数：**
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
+| season_type | string | 否 | 赛季类型：all=全部，league=联赛，cup=杯赛 |
 | force_refresh | boolean | 否 | 是否强制刷新缓存 |
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "数据来自缓存",
+  "data": { ... },
+  "season_type": "all",
+  "from_cache": true,
+  "cache_time": "2026-03-24T10:30:00"
+}
+```
 
 ### 手动刷新缓存
 
 ```
-POST /api/admin/refresh?force=true
+POST /api/admin/refresh?season_type=all&force=true
 ```
+
+**参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| season_type | string | 否 | 赛季类型：all/league/cup |
+| force | boolean | 否 | 是否强制刷新 |
 
 ### 查看缓存信息
 
 ```
-GET /api/admin/cache_info
+GET /api/admin/cache_info?season_type=all
 ```
+
+**参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| season_type | string | 否 | 赛季类型：all/league/cup |
+
+### 查看所有缓存状态
+
+```
+GET /api/admin/cache_list
+```
+
+返回所有赛季类型的缓存状态。
 
 ### 清除缓存
 
 ```
-DELETE /api/admin/cache
+DELETE /api/admin/cache?season_type=all
 ```
+
+**参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| season_type | string | 否 | 赛季类型：all=清除所有，league/cup=清除指定类型 |
 
 ### 获取存档列表
 
@@ -144,10 +186,12 @@ GET /api/admin/archive_list
 ### 获取指定日期存档
 
 ```
-GET /api/admin/archive/{date}
+GET /api/admin/archive/{date}?season_type=all
 ```
 
-参数 `date`: 日期，格式 YYYY-MM-DD
+**参数：**
+- `date`: 日期，格式 YYYY-MM-DD
+- `season_type`: 赛季类型：all/league/cup
 
 ### 健康检查
 

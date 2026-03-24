@@ -21,15 +21,18 @@
       </button>
     </div>
 
-    <!-- 左右横向排列的卡片 -->
     <div class="flex flex-wrap">
       <!-- 选手卡片 -->
       <div class="player-card-container single">
         <div class="player-card">
-          <img :src="playerAvatar" :alt="careerData.player_info.latest_nickname" @error="handleAvatarError" />
-          <div class="player-card-name">{{ careerData.player_info.latest_nickname }}</div>
-          <div class="player-card-info">{{ careerData.player_info.latest_team }}</div>
-          <div class="player-card-info">{{ careerData.player_info.position || '对抗路' }}</div>
+          <img
+            :src="playerAvatar"
+            :alt="careerData.player_info?.latest_nickname || '选手'"
+            @error="handleAvatarError"
+          />
+          <div class="player-card-name">{{ careerData.player_info?.latest_nickname || '未知' }}</div>
+          <div class="player-card-info">{{ careerData.player_info?.latest_team || '未知战队' }}</div>
+          <div class="player-card-info">{{ careerData.player_info?.position || '对抗路' }}</div>
           <div class="player-card-info">筛选：{{ seasonFilterText }}</div>
         </div>
       </div>
@@ -38,7 +41,7 @@
       <div class="career-info-card flex-item">
         <div class="career-info-item">
           <span class="career-info-label">职业生涯时间</span>
-          <span class="career-info-value">{{ careerData.career_summary.date_range }}</span>
+          <span class="career-info-value">{{ careerData.career_summary?.date_range || '-' }}</span>
         </div>
         <div class="career-info-item">
           <span class="career-info-label">参与赛季总数</span>
@@ -50,47 +53,47 @@
     <!-- 总数据概览 -->
     <div class="summary-cards">
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.total_matches }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.total_battles || 0 }}</div>
         <div class="summary-card-label">生涯总对局</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value win">{{ careerData.career_summary.win_battles }}</div>
+        <div class="summary-card-value win">{{ careerData.career_summary?.win_battles || 0 }}</div>
         <div class="summary-card-label">获胜对局</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value lose">{{ careerData.career_summary.lose_battles }}</div>
+        <div class="summary-card-value lose">{{ careerData.career_summary?.lose_battles || 0 }}</div>
         <div class="summary-card-label">失败对局</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.match_win_rate }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.win_rate || '0%' }}</div>
         <div class="summary-card-label">对局胜率</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.total_kills }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.total_kills || 0 }}</div>
         <div class="summary-card-label">生涯总击杀</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.total_deaths }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.total_deaths || 0 }}</div>
         <div class="summary-card-label">生涯总死亡</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.total_assists }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.total_assists || 0 }}</div>
         <div class="summary-card-label">生涯总助攻</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.kda_ratio }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.kda_ratio || '0' }}</div>
         <div class="summary-card-label">生涯 KDA 比</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.avg_kills }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.avg_kills || '0' }}</div>
         <div class="summary-card-label">场均击杀</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.avg_deaths }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.avg_deaths || '0' }}</div>
         <div class="summary-card-label">场均死亡</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.avg_assists }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.avg_assists || '0' }}</div>
         <div class="summary-card-label">场均助攻</div>
       </div>
     </div>
@@ -102,19 +105,19 @@
 
     <div class="summary-cards">
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.total_series || 0 }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.total_matches || 0 }}</div>
         <div class="summary-card-label">总大场数</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value win">{{ careerData.career_summary.series_wins || 0 }}</div>
+        <div class="summary-card-value win">{{ careerData.career_summary?.match_wins || 0 }}</div>
         <div class="summary-card-label">大场获胜</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value lose">{{ careerData.career_summary.series_losses || 0 }}</div>
+        <div class="summary-card-value lose">{{ careerData.career_summary?.match_loses || 0 }}</div>
         <div class="summary-card-label">大场失败</div>
       </div>
       <div class="summary-card">
-        <div class="summary-card-value">{{ careerData.career_summary.series_win_rate || '0%' }}</div>
+        <div class="summary-card-value">{{ careerData.career_summary?.match_win_rate || '0%' }}</div>
         <div class="summary-card-label">大场胜率</div>
       </div>
     </div>
@@ -140,7 +143,7 @@
           <tbody>
             <tr v-for="match in paginatedMatches" :key="match.match_id">
               <td>{{ match.match_date }}</td>
-              <td>{{ getMatchName(match.season_id) }}</td>
+              <td>{{ getSeasonName(match.season_id) }}</td>
               <td>{{ match.team_name }}</td>
               <td>{{ match.opponent_team_name }}</td>
               <td class="center">
@@ -231,7 +234,7 @@
         </thead>
         <tbody>
           <tr v-for="season in filteredSeasonStats" :key="season.season_id">
-            <td>{{ getMatchName(season.season_id) }}</td>
+            <td>{{ getSeasonName(season.season_id) }}</td>
             <td class="center">
               <strong>{{ season.battles }}</strong>
             </td>
@@ -252,7 +255,7 @@
     </div>
 
     <!-- 英雄使用统计 -->
-    <div class="section-title">英雄使用统计 (共{{ careerData.hero_stats.length }}个英雄)</div>
+    <div class="section-title">英雄使用统计 (共{{ careerData.hero_stats?.length || 0 }}个英雄)</div>
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -296,20 +299,28 @@
   </div>
 
   <!-- 加载状态 -->
-  <div class="loading" v-else>
+  <div class="loading" v-else-if="loading">
     <div class="loading-spinner"></div>
-    <div class="loading-text">正在加载数据...</div>
+    <div class="loading-text">正在加载{{ seasonFilterText }}数据...</div>
+  </div>
+
+  <!-- 错误状态 -->
+  <div class="error-message" v-else-if="error">
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" @click="loadData">重试</button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import { ref, computed, onMounted, watch } from 'vue';
+import { getCareerData } from '../api/stats';
 
 const careerData = ref(null);
 const seasonFilter = ref('all');
 const currentPage = ref(1);
 const pageSize = 10;
+const loading = ref(false);
+const error = ref(null);
 
 const playerAvatar = ref('https://hero-wind.oss-cn-shanghai.aliyuncs.com/KPL/KPL_Play_images/KPL2026S1/KSG.无言.png');
 
@@ -318,21 +329,45 @@ const seasonFilterText = computed(() => {
   return map[seasonFilter.value];
 });
 
+// 加载数据
+const loadData = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await getCareerData(seasonFilter.value);
+    careerData.value = res.data.data;
+    currentPage.value = 1;
+    console.log('数据加载成功', seasonFilter.value, careerData.value);
+  } catch (err) {
+    console.error('加载失败', err);
+    error.value = `加载失败：${err.message}`;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 筛选赛季类型
+const filterSeasonType = async (type) => {
+  if (type === seasonFilter.value) return;
+  seasonFilter.value = type;
+  await loadData();
+};
+
+const getSeasonName = (seasonId) => {
+  const map = {
+    KCC2025: '2025挑战者杯',
+    KPL2026S1: '2026赛季赛',
+    other: '其他',
+  };
+  return map[seasonId] || '其他';
+};
+
 // 筛选后的比赛详情
 const filteredMatchDetails = computed(() => {
   if (!careerData.value) return [];
   const matches = careerData.value.match_details || [];
-  if (seasonFilter.value === 'all') return matches;
-
-  return matches.filter((match) => {
-    const seasonName = match.season_name || match.season_id || '';
-    if (seasonFilter.value === 'league') {
-      return seasonName.includes('KPL') || seasonName.includes('联赛');
-    } else if (seasonFilter.value === 'cup') {
-      return seasonName.includes('杯') || seasonName.includes('挑战者杯');
-    }
-    return true;
-  });
+  // 数据已经按赛季类型从 API 获取，不需要再过滤
+  return matches;
 });
 
 // 分页后的比赛
@@ -362,24 +397,9 @@ const displayPages = computed(() => {
 // 筛选后的赛季数据
 const filteredSeasonStats = computed(() => {
   if (!careerData.value) return [];
-  const stats = careerData.value.season_stats || [];
-  if (seasonFilter.value === 'all') return stats;
-
-  return stats.filter((season) => {
-    const seasonName = season.season_name || season.season_id || '';
-    if (seasonFilter.value === 'league') {
-      return seasonName.includes('KPL') || seasonName.includes('联赛');
-    } else if (seasonFilter.value === 'cup') {
-      return seasonName.includes('杯') || seasonName.includes('挑战者杯');
-    }
-    return true;
-  });
+  // 数据已经按赛季类型从 API 获取，直接返回
+  return careerData.value.season_stats || [];
 });
-
-const filterSeasonType = (type) => {
-  seasonFilter.value = type;
-  currentPage.value = 1;
-};
 
 const changePage = (page) => {
   if (page < 1 || page > totalPages.value) return;
@@ -395,37 +415,21 @@ const handleHeroAvatarError = (e) => {
 };
 
 const getHeroAvatar = (heroName) => {
-  // 这里可以根据英雄名字映射到具体的头像 URL
-  // 暂时返回一个默认占位图
+  // 可以根据英雄名字映射到具体的头像 URL
   return '';
 };
 
 const getSeasonSummary = () => {
-  if (!careerData.value) return '';
+  if (!careerData.value) return '-';
   const total = careerData.value.season_stats?.length || 0;
-  const leagueCount = filteredSeasonStats.value.filter((s) => {
-    const name = s.season_name || s.season_id || '';
-    return name.includes('KPL') || name.includes('联赛');
-  }).length;
-  const cupCount = total - leagueCount;
-  return `${total} 个赛季（联赛：${leagueCount}，杯赛：${cupCount}）`;
-};
-
-const getMatchName = (matchId) => {
-  const matchTextMap = {
-    KPL2026S1: '2026KPL春季赛',
-    KCC2025: '2025挑战者杯',
-  };
-  return matchTextMap[matchId];
-};
-
-onMounted(async () => {
-  try {
-    const res = await axios.get('/api/player/career');
-    careerData.value = res.data.data;
-    console.log('数据加载成功', careerData.value);
-  } catch (error) {
-    console.error('加载失败', error);
+  if (seasonFilter.value !== 'all') {
+    return `${total} 个${seasonFilter.value === 'league' ? '联赛' : '杯赛'}赛季`;
   }
+  // 这里可以根据实际情况计算联赛和杯赛的数量
+  return `${total} 个赛季`;
+};
+
+onMounted(() => {
+  loadData();
 });
 </script>
