@@ -29,8 +29,6 @@ KSG成员数据：http://47.102.210.150:5006/KPL2026S1/KSG
 
 战力系统官方页面：http://www.jungushiyan.cn/gaojie/jiaoshou/jiaoshou.html
 
-我有一个数据接口，获取KPL无言选手职业生涯数据： 
+获取KPL无言选手职业生涯数据： 
 http://47.102.210.150:5049/api/player-career?player_name=KSG.%E6%97%A0%E8%A8%80&season_type=all
 返回数据格式如 career.json 附件所示，而附件 result.html 是数据最终呈现的结构。
-我需要你实现一个完整的 data.html 的代码，将 接口中的数据按照 result.html 中的结构进行展示。
-将代码提供给我。

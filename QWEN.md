@@ -65,7 +65,7 @@ pip install -r requirements.txt
 # 编辑 .env 填入第三方 API 地址
 
 # 启动服务
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8001
 ```
 
 ### 前端设置
@@ -83,19 +83,19 @@ npm run dev
 ### 访问地址
 
 - **前端**: http://localhost:3000
-- **后端 API 文档**: http://localhost:8000/docs
+- **后端 API 文档**: http://localhost:8001/docs
 
 ---
 
 ## API 接口
 
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/player/career` | GET | 获取选手生涯数据（支持缓存） |
-| `/api/admin/refresh` | POST | 手动刷新缓存 |
-| `/api/admin/cache_info` | GET | 查看缓存信息 |
-| `/api/admin/cache` | DELETE | 清除缓存 |
-| `/api/health` | GET | 健康检查 |
+| 接口                    | 方法   | 说明                         |
+| ----------------------- | ------ | ---------------------------- |
+| `/api/player/career`    | GET    | 获取选手生涯数据（支持缓存） |
+| `/api/admin/refresh`    | POST   | 手动刷新缓存                 |
+| `/api/admin/cache_info` | GET    | 查看缓存信息                 |
+| `/api/admin/cache`      | DELETE | 清除缓存                     |
+| `/api/health`           | GET    | 健康检查                     |
 
 ### 查询参数
 
@@ -145,14 +145,14 @@ VITE_API_BASE_URL=http://localhost:8000/api
 
 ## 关键文件参考
 
-| 文件 | 用途 |
-|------|------|
-| `backend/main.py` | FastAPI 服务器，包含缓存逻辑 |
-| `backend/requirements.txt` | Python 依赖列表 |
-| `backend/.env` | 后端配置 |
-| `frontend/src/App.vue` | 主 UI 组件 |
-| `frontend/src/api/stats.js` | API 客户端封装 |
-| `doc/project.md` | 详细文档（中文） |
+| 文件                        | 用途                         |
+| --------------------------- | ---------------------------- |
+| `backend/main.py`           | FastAPI 服务器，包含缓存逻辑 |
+| `backend/requirements.txt`  | Python 依赖列表              |
+| `backend/.env`              | 后端配置                     |
+| `frontend/src/App.vue`      | 主 UI 组件                   |
+| `frontend/src/api/stats.js` | API 客户端封装               |
+| `doc/project.md`            | 详细文档（中文）             |
 
 ---
 
@@ -185,4 +185,5 @@ curl -X DELETE "http://localhost:8000/api/admin/cache"
 - 运行前必须在 `backend/.env` 中配置第三方 API 地址
 
 ## Qwen Added Memories
+
 - 用户手动修正了 Home.vue 中的数据显示字段，以后修改代码时不要改动用户已修正的 JS 字段映射
