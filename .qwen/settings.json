@@ -11,7 +11,23 @@
       "Bash(rm *)",
       "Bash(npm install *)",
       "Bash(rmdir *)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(mkdir *)",
+      "Bash(cat)",
+      "Bash(import *)",
+      "Bash(with)",
+      "Bash(as *)",
+      "Bash(content *)",
+      "Bash(old_config *)",
+      "Bash(new_config *)",
+      "Bash(old_config, *)",
+      "Bash(old_save *)",
+      "Bash(new_save *)",
+      "Bash(old_save, *)",
+      "Bash(f.write)",
+      "Bash(print)",
+      "Bash(eof)",
+      "Bash(mv *)"
     ]
   }
 }

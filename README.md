@@ -27,7 +27,10 @@ kpl_stats/
 │   ├── main.py              # FastAPI 主程序
 │   ├── requirements.txt     # Python 依赖
 │   ├── .env                 # 环境变量配置
-│   └── cache.json           # 本地缓存文件（自动生成）
+│   ├── .env.example         # 环境变量模板
+│   └── data/                # 数据目录（自动生成）
+│       ├── cache.json       # 当前缓存
+│       └── cache.YYYY-MM-DD.json  # 每日存档
 ├── frontend/                # 前端应用
 │   ├── index.html
 │   ├── package.json
@@ -124,6 +127,20 @@ GET /api/admin/cache_info
 ```
 DELETE /api/admin/cache
 ```
+
+### 获取存档列表
+
+```
+GET /api/admin/archive_list
+```
+
+### 获取指定日期存档
+
+```
+GET /api/admin/archive/{date}
+```
+
+参数 `date`: 日期，格式 YYYY-MM-DD
 
 ### 健康检查
 
