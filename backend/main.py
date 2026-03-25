@@ -185,7 +185,7 @@ async def fetch_halo_posts_from_api(size: int = 3):
 
             # Halo 控制台 API 端点：获取已发布的文章
             base_url = "https://blog.kplwuyan.site"
-            request_url = f"{base_url}/apis/api.console.halo.run/v1alpha1/posts"
+            request_url = f"{HALO_API_URL}/posts"
             params = {
                 "size": size,
                 "publishPhase": "PUBLISHED",
@@ -201,25 +201,25 @@ async def fetch_halo_posts_from_api(size: int = 3):
             )
             response.raise_for_status()
             halo_data = response.json()
-            
+
             # 精简数据，只返回前端需要的字段
             simplified_items = []
             for item in halo_data.get('items', []):
                 post = item.get('post', {})
                 spec = post.get('spec', {})
                 status = post.get('status', {})
-                
+
                 # 处理封面图
                 cover = spec.get('cover', '')
                 if cover and not cover.startswith('http'):
                     cover = f"{base_url}{cover}"
-                
+
                 # 处理摘要
                 excerpt_obj = spec.get('excerpt', {})
                 excerpt = excerpt_obj.get('raw', '') if isinstance(excerpt_obj, dict) else excerpt_obj
                 if not excerpt:
                     excerpt = status.get('excerpt', '')
-                
+
                 simplified_items.append({
                     "title": spec.get('title', '无标题'),
                     "cover": cover,
@@ -227,7 +227,7 @@ async def fetch_halo_posts_from_api(size: int = 3):
                     "publishTime": spec.get('publishTime', ''),
                     "permalink": status.get('permalink', '#')
                 })
-            
+
             print(f"[{datetime.now()}] Halo API 请求成功，共 {len(simplified_items)} 篇文章")
             return {"items": simplified_items}
     except httpx.TimeoutException:
