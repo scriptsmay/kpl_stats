@@ -25,7 +25,6 @@
 | Secret 名称 | 说明 | 默认值 | 必填 |
 |------------|------|------|------|
 | `HALO_API_BASE` | Halo 博客基础 URL | `https://blog.kplwuyan.site` | ✅ |
-| `HALO_API_PATH` | Halo API 路径 | `/apis/api.console.halo.run/v1alpha1` | ✅ |
 | `HALO_API_TOKEN` | Halo API 认证 Token | - | ✅ |
 | `HALO_POSTS_CACHE_TTL_HOURS` | 文章列表缓存时间（小时） | `1` | ❌ |
 
@@ -72,7 +71,6 @@ CACHE_TTL_HOURS=24
 
 # Halo 博客 API
 HALO_API_BASE=https://blog.kplwuyan.site
-HALO_API_PATH=/apis/api.console.halo.run/v1alpha1
 HALO_API_TOKEN=pat_eyJraWQiOiI0MDByMkZPYTJsVFNKNE1SOVIxS21jdkJfcnp3QURYX0NhWDctZlNMQmZnIiwiYWxnIjoiUlMyNTYifQ...
 HALO_POSTS_CACHE_TTL_HOURS=1
 

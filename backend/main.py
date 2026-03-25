@@ -29,8 +29,7 @@ SEASONS_API_URL = os.getenv("SEASONS_API_URL", "http://47.102.210.150:5006/seaso
 
 # Halo 博客 API 配置
 HALO_API_BASE = os.getenv("HALO_API_BASE", "https://blog.kplwuyan.site")
-HALO_API_PATH = "/apis/api.console.halo.run/v1alpha1"
-HALO_API_URL = f"{HALO_API_BASE}{HALO_API_PATH}"
+HALO_API_URL = f"{HALO_API_BASE}/apis/api.console.halo.run/v1alpha1"
 HALO_API_TOKEN = os.getenv("HALO_API_TOKEN", "")
 HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  # 默认缓存 1 小时
 

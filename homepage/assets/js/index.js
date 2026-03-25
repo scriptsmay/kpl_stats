@@ -180,8 +180,8 @@ async function fetchStats() {
         <div class="stat-label">MVP 次数</div>
       </div>
       <div class="stat-card" data-aos="fade-up">
-        <div class="stat-value">${data.win_rate ?? data.winRate ?? '--'}</div>
-        <div class="stat-label">胜率</div>
+        <div class="stat-value">${data.total_assists ?? data.total_assists ?? '--'}</div>
+        <div class="stat-label">总助攻</div>
       </div>
     `;
 
@@ -249,7 +249,7 @@ async function fetchPosts() {
       return;
     }
 
-    const posts = items.map(item => {
+    const posts = items.map((item) => {
       // 处理封面图
       let cover = item.cover || 'https://picsum.photos/400/200?random=1';
 
@@ -268,7 +268,7 @@ async function fetchPosts() {
         excerpt: excerpt,
         date: date,
         cover: cover,
-        permalink: item.permalink || '#'
+        permalink: item.permalink || '#',
       };
     });
 
