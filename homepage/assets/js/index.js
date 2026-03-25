@@ -234,7 +234,7 @@ async function fetchPosts() {
       throw new Error(result.message || '博客加载失败');
     }
 
-    // Halo API 返回结构：{ items: [{ metadata, spec, status, owner, stats }], ... }
+    // 后端已精简数据：{ items: [{ title, cover, excerpt, publishTime, permalink }] }
     const haloData = result.data;
     const items = haloData.items || [];
     
@@ -250,33 +250,19 @@ async function fetchPosts() {
     }
 
     const posts = items.map(item => {
-      // 处理封面图：可能是相对路径或绝对路径
-      let cover = item.spec?.cover || '';
-      if (cover && !cover.startsWith('http')) {
-        cover = 'https://blog.kplwuyan.site' + cover;
-      }
-      if (!cover) {
-        cover = 'https://picsum.photos/400/200?random=1';
-      }
-      
-      // 处理摘要：可能是对象 { autoGenerate, raw } 或字符串
-      let excerpt = '';
-      if (typeof item.spec?.excerpt === 'object') {
-        excerpt = item.spec.excerpt.raw || item.status?.excerpt || '暂无摘要';
-      } else {
-        excerpt = item.spec?.excerpt || item.status?.excerpt || '暂无摘要';
-      }
+      // 处理封面图
+      let cover = item.cover || 'https://picsum.photos/400/200?random=1';
       
       // 处理发布日期
-      const publishTime = item.spec?.publishTime;
+      const publishTime = item.publishTime;
       const date = publishTime ? new Date(publishTime).toISOString().split('T')[0] : '未知日期';
       
       return {
-        title: item.spec?.title || '无标题',
-        excerpt: excerpt,
+        title: item.title || '无标题',
+        excerpt: item.excerpt || '暂无摘要',
         date: date,
         cover: cover,
-        permalink: item.status?.permalink || '#'
+        permalink: item.permalink || '#'
       };
     });
 

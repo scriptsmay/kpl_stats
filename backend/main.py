@@ -182,15 +182,16 @@ async def fetch_halo_posts_from_api(size: int = 3):
             headers = {}
             if HALO_API_TOKEN:
                 headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
-            
-            # Halo API 端点：获取已发布的文章
-            request_url = f"{HALO_API_URL}/posts"
+
+            # Halo 控制台 API 端点：获取已发布的文章
+            base_url = "https://blog.kplwuyan.site"
+            request_url = f"{base_url}/apis/api.console.halo.run/v1alpha1/posts"
             params = {
                 "size": size,
-                "published": True,
-                "sort": "publishTime,desc"
+                "publishPhase": "PUBLISHED",
+                "sort": "spec.publishTime,desc"
             }
-            
+
             print(f"[{datetime.now()}] 开始请求 Halo API: {request_url}")
             response = await client.get(
                 request_url,
@@ -200,8 +201,35 @@ async def fetch_halo_posts_from_api(size: int = 3):
             )
             response.raise_for_status()
             halo_data = response.json()
-            print(f"[{datetime.now()}] Halo API 请求成功，共 {len(halo_data.get('items', []))} 篇文章")
-            return halo_data
+            
+            # 精简数据，只返回前端需要的字段
+            simplified_items = []
+            for item in halo_data.get('items', []):
+                post = item.get('post', {})
+                spec = post.get('spec', {})
+                status = post.get('status', {})
+                
+                # 处理封面图
+                cover = spec.get('cover', '')
+                if cover and not cover.startswith('http'):
+                    cover = f"{base_url}{cover}"
+                
+                # 处理摘要
+                excerpt_obj = spec.get('excerpt', {})
+                excerpt = excerpt_obj.get('raw', '') if isinstance(excerpt_obj, dict) else excerpt_obj
+                if not excerpt:
+                    excerpt = status.get('excerpt', '')
+                
+                simplified_items.append({
+                    "title": spec.get('title', '无标题'),
+                    "cover": cover,
+                    "excerpt": excerpt,
+                    "publishTime": spec.get('publishTime', ''),
+                    "permalink": status.get('permalink', '#')
+                })
+            
+            print(f"[{datetime.now()}] Halo API 请求成功，共 {len(simplified_items)} 篇文章")
+            return {"items": simplified_items}
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Halo API 请求超时")
     except httpx.HTTPStatusError as e:
@@ -258,8 +286,7 @@ async def fetch_halo_videos_from_api():
                 headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
             
             # Halo 控制台 API 端点：获取指定分组的视频附件
-            base_url = "https://blog.kplwuyan.site"
-            request_url = f"{base_url}/apis/api.console.halo.run/v1alpha1/attachments"
+            request_url = f"{HALO_API_URL}/attachments"
             params = {
                 "fieldSelector": f"spec.groupName={HALO_VIDEO_GROUP_ID}",
                 "accepts": "video/*",
