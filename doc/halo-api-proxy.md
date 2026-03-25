@@ -1,4 +1,4 @@
-# Halo 博客 API 配置指南
+# Halo API 配置与使用指南
 
 ## 概述
 
@@ -26,6 +26,10 @@ homepage (前端) → backend (FastAPI 代理) → Halo API
 HALO_API_URL=https://blog.kplwuyan.site/apis/api.content.halo.run/v1alpha1
 HALO_API_TOKEN=your_actual_halo_api_token_here
 HALO_POSTS_CACHE_TTL_HOURS=1
+
+# Halo 视频 API 配置
+HALO_VIDEO_GROUP_ID=attachment-group-25ptmssm
+HALO_VIDEO_CACHE_TTL_SECONDS=600
 ```
 
 | 变量名 | 说明 | 默认值 |
@@ -33,6 +37,8 @@ HALO_POSTS_CACHE_TTL_HOURS=1
 | `HALO_API_URL` | Halo API 基础地址 | - |
 | `HALO_API_TOKEN` | Halo API 认证 Token | - |
 | `HALO_POSTS_CACHE_TTL_HOURS` | 文章列表缓存时间（小时） | 1 |
+| `HALO_VIDEO_GROUP_ID` | 视频附件分组 ID | - |
+| `HALO_VIDEO_CACHE_TTL_SECONDS` | 视频列表缓存时间（秒） | 600 |
 
 **注意**：正确的 API 端点是 `/apis/api.content.halo.run/v1alpha1`（不是 `/apis/api.halo.run/v1alpha1`）
 
@@ -124,6 +130,107 @@ DELETE /api/blog/cache
 ### 问题：文章封面图显示失败
 
 前端已配置 `onerror` 降级处理，会自动替换为随机占位图。如需自定义，可修改 `homepage/assets/js/index.js` 中的 `fetchPosts()` 函数。
+
+---
+
+## Halo 视频 API 接口
+
+### 随机获取一个视频
+
+```http
+GET /api/video/random
+```
+
+**说明：**
+- 从视频附件分组中随机返回一个视频
+- 包含标题、URL、封面图
+- 视频列表缓存 10 分钟，每次请求从缓存中随机选择
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "随机视频获取成功",
+  "data": {
+    "title": "训练日常.mp4",
+    "url": "https://blog.kplwuyan.site/upload/video.mp4",
+    "poster": "https://blog.kplwuyan.site/upload/video-cover.jpg"
+  },
+  "meta": {
+    "total_videos": 25,
+    "cache_used": true
+  }
+}
+```
+
+### 获取所有视频列表
+
+```http
+GET /api/video/list
+```
+
+**说明：**
+- 返回缓存中的所有视频附件信息
+- 适合用于视频 gallery 页面
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "视频列表获取成功",
+  "data": [
+    {
+      "title": "训练日常.mp4",
+      "url": "https://blog.kplwuyan.site/upload/video1.mp4",
+      "poster": "https://blog.kplwuyan.site/upload/video1-cover.jpg"
+    }
+  ],
+  "meta": {
+    "total": 25,
+    "cache_used": true
+  }
+}
+```
+
+### 查看视频缓存信息
+
+```http
+GET /api/video/cache_info
+```
+
+**响应示例：**
+```json
+{
+  "code": 200,
+  "message": "缓存信息",
+  "data": {
+    "exists": true,
+    "cache_file": "/path/to/cache.halo.videos.json",
+    "cache_time": "2026-03-25T12:00:00",
+    "is_valid": true,
+    "items_count": 25,
+    "expires_in": "480 秒",
+    "file_size": 10240
+  }
+}
+```
+
+### 清除视频缓存
+
+```http
+DELETE /api/video/cache
+```
+
+## 视频封面图生成规则
+
+系统会根据视频 URL 自动生成封面图 URL：
+
+```
+视频 URL: /upload/training.mp4
+封面 URL: /upload/training-cover.jpg
+```
+
+请确保你的视频文件命名符合此规则，或者手动上传对应的封面图。
 
 ---
 
