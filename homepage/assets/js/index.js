@@ -2,8 +2,10 @@
 // 无言粉丝应援站 · 主脚本
 // ============================================
 
-// API 配置
-const API_BASE_URL = 'https://data.kplwuyan.site/api';
+// API 配置（支持环境变量覆盖）
+// 开发环境：http://localhost:8001
+// 生产环境：https://data.kplwuyan.site/api
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8001';
 
 // 初始化 AOS 动画
 AOS.init({
