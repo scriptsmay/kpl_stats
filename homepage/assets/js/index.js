@@ -2,6 +2,9 @@
 // 无言粉丝应援站 · 主脚本
 // ============================================
 
+// API 配置
+const API_BASE_URL = 'https://data.kplwuyan.site/api';
+
 // 初始化 AOS 动画
 AOS.init({
   duration: 800,
@@ -76,16 +79,16 @@ function loadHeroes() {
 // 加载生涯高光时刻
 function loadHighlights() {
   const highlights = [
-    { date: '2025-12-11', desc: '2025挑战者杯单败淘汰赛D6 · 马超 MVP' },
-    { date: '2025-12-19', desc: '2025挑战者杯双败淘汰赛D1 · 关羽、马超、曹操 MVP' },
-    { date: '2025-12-25', desc: '2025挑战者杯双败淘汰赛D4 · 夏洛特 MVP' },
-    { date: '2026-01-15', desc: '2026KPL春季赛常规赛第一轮W1D2 · 狂铁 MVP' },
-    { date: '2026-01-22', desc: '2026KPL春季赛常规赛第一轮W2D2 · 关羽 MVP' },
-    { date: '2026-03-08', desc: '2026KPL春季赛常规赛第三轮W1D1 · 关羽 MVP' },
-    { date: '2026-03-08', desc: '2026KPL春季赛常规赛第三轮W1D4 · 夏洛特 MVP' },
-    { date: '2026-03-14', desc: '2026KPL春季赛常规赛第三轮W2D4 · 马超 MVP' },
-    { date: '2026-03-18', desc: '2026KPL春季赛常规赛第三轮W3D1 · 关羽 MVP' },
-    { date: '2026-03-21', desc: '2026KPL春季赛常规赛第三轮W3D4 · 吕布 MVP' },
+    { date: '2025-12-11', desc: '2025 挑战者杯单败淘汰赛 D6 · 马超 MVP' },
+    { date: '2025-12-19', desc: '2025 挑战者杯双败淘汰赛 D1 · 关羽、马超、曹操 MVP' },
+    { date: '2025-12-25', desc: '2025 挑战者杯双败淘汰赛 D4 · 夏洛特 MVP' },
+    { date: '2026-01-15', desc: '2026KPL 春季赛常规赛第一轮 W1D2 · 狂铁 MVP' },
+    { date: '2026-01-22', desc: '2026KPL 春季赛常规赛第一轮 W2D2 · 关羽 MVP' },
+    { date: '2026-03-08', desc: '2026KPL 春季赛常规赛第三轮 W1D1 · 关羽 MVP' },
+    { date: '2026-03-08', desc: '2026KPL 春季赛常规赛第三轮 W1D4 · 夏洛特 MVP' },
+    { date: '2026-03-14', desc: '2026KPL 春季赛常规赛第三轮 W2D4 · 马超 MVP' },
+    { date: '2026-03-18', desc: '2026KPL 春季赛常规赛第三轮 W3D1 · 关羽 MVP' },
+    { date: '2026-03-21', desc: '2026KPL 春季赛常规赛第三轮 W3D4 · 吕布 MVP' },
   ];
   const container = document.getElementById('highlightsList');
   if (container) {
@@ -105,9 +108,9 @@ function loadHighlights() {
 // 加载职业生涯时间线
 function loadCareer() {
   const career = [
-    { date: '2025-12-09', desc: '以青训破军无言身份首次登上KPL赛场' },
-    { date: '2025-12-29', desc: '以青训营状元身份加入KSG俱乐部，改名KSG无言' },
-    { date: '2026-01-15', desc: '以KSG俱乐部首发对抗路登上KPL春季赛' },
+    { date: '2025-12-09', desc: '以青训破军无言身份首次登上 KPL 赛场' },
+    { date: '2025-12-29', desc: '以青训营状元身份加入 KSG 俱乐部，改名 KSG 无言' },
+    { date: '2026-01-15', desc: '以 KSG 俱乐部首发对抗路登上 KPL 春季赛' },
   ];
   const container = document.getElementById('careerList');
   if (container) {
@@ -129,40 +132,78 @@ async function fetchStats() {
   const container = document.getElementById('statsGrid');
   if (!container) return;
 
+  // 显示加载状态
+  container.innerHTML = `
+    <div class="stat-card loading">
+      <div class="skeleton" style="width: 60px; height: 40px; margin: 0 auto"></div>
+    </div>
+    <div class="stat-card loading">
+      <div class="skeleton" style="width: 60px; height: 40px; margin: 0 auto"></div>
+    </div>
+    <div class="stat-card loading">
+      <div class="skeleton" style="width: 60px; height: 40px; margin: 0 auto"></div>
+    </div>
+    <div class="stat-card loading">
+      <div class="skeleton" style="width: 60px; height: 40px; margin: 0 auto"></div>
+    </div>
+  `;
+
   try {
-    // TODO: 替换为真实API地址
-    // const response = await fetch('https://data.kplwuyan.site/api/player/core-stats');
-    // const data = await response.json();
+    const response = await fetch(`${API_BASE_URL}/player/career?season_type=all`);
 
-    // 模拟数据 - 上线后替换为真实数据
-    const data = { matches: 42, kills: 187, mvp: 12, winRate: 68.5 };
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
+    const result = await response.json();
+
+    if (result.code !== 200) {
+      throw new Error(result.message || '数据加载失败');
+    }
+
+    const data = result.data.career_summary;
+
+    // 根据实际返回的数据结构调整字段映射
     container.innerHTML = `
-            <div class="stat-card" data-aos="fade-up">
-                <div class="stat-value">${data.matches}</div>
-                <div class="stat-label">出场次数</div>
-            </div>
-            <div class="stat-card" data-aos="fade-up">
-                <div class="stat-value">${data.kills}</div>
-                <div class="stat-label">总击杀</div>
-            </div>
-            <div class="stat-card" data-aos="fade-up">
-                <div class="stat-value">${data.mvp}</div>
-                <div class="stat-label">MVP次数</div>
-            </div>
-            <div class="stat-card" data-aos="fade-up">
-                <div class="stat-value">${data.winRate}%</div>
-                <div class="stat-label">胜率</div>
-            </div>
-        `;
+      <div class="stat-card" data-aos="fade-up">
+        <div class="stat-value">${data.matches ?? data.total_matches ?? '--'}</div>
+        <div class="stat-label">出场次数</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up">
+        <div class="stat-value">${data.kills ?? data.total_kills ?? '--'}</div>
+        <div class="stat-label">总击杀</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up">
+        <div class="stat-value">${data.mvp ?? data.mvp_count ?? '--'}</div>
+        <div class="stat-label">MVP 次数</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up">
+        <div class="stat-value">${data.win_rate ?? data.winRate ?? '--'}</div>
+        <div class="stat-label">胜率</div>
+      </div>
+    `;
+
+    console.log('[Stats] 数据加载成功:', result.message);
   } catch (error) {
-    console.error('获取数据失败:', error);
+    console.error('[Stats] 获取数据失败:', error);
     container.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-value">--</div>
-                <div class="stat-label">数据加载中</div>
-            </div>
-        `;
+      <div class="stat-card">
+        <div class="stat-value">--</div>
+        <div class="stat-label">数据加载失败</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">--</div>
+        <div class="stat-label">请稍后重试</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">--</div>
+        <div class="stat-label">数据加载失败</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">--</div>
+        <div class="stat-label">请稍后重试</div>
+      </div>
+    `;
   }
 }
 
@@ -172,7 +213,7 @@ async function fetchPosts() {
   if (!container) return;
 
   try {
-    // TODO: 替换为真实API地址
+    // TODO: 替换为真实 API 地址
     // const response = await fetch('https://blog.kplwuyan.site/api/content/posts?size=3');
     // const posts = await response.json();
 
@@ -192,7 +233,7 @@ async function fetchPosts() {
       },
       {
         title: '品牌代言官宣',
-        excerpt: '正式成为XX品牌代言人...',
+        excerpt: '正式成为 XX 品牌代言人...',
         date: '2026-03-10',
         cover: 'https://picsum.photos/400/200?random=3',
       },
@@ -213,7 +254,7 @@ async function fetchPosts() {
       )
       .join('');
   } catch (error) {
-    console.error('获取博客失败:', error);
+    console.error('[Posts] 获取博客失败:', error);
   }
 }
 
@@ -243,7 +284,7 @@ function getAge() {
   }
 
   // 计算时间差（毫秒），然后转为天数
-  // 1天 = 24小时 * 60分钟 * 60秒 * 1000毫秒
+  // 1 天 = 24 小时 * 60 分钟 * 60 秒 * 1000 毫秒
   const diffTime = nextBirthday - today;
   const daysUntilBirthday = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
