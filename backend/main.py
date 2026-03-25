@@ -28,8 +28,9 @@ CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小
 SEASONS_API_URL = os.getenv("SEASONS_API_URL", "http://47.102.210.150:5006/seasons/list")
 
 # Halo 博客 API 配置
-# /apis/api.console.halo.run/v1alpha1/posts
-HALO_API_URL = os.getenv("HALO_API_URL", "https://blog.kplwuyan.site/apis/api.console.halo.run/v1alpha1")
+HALO_API_BASE = os.getenv("HALO_API_BASE", "https://blog.kplwuyan.site")
+HALO_API_PATH = "/apis/api.console.halo.run/v1alpha1"
+HALO_API_URL = f"{HALO_API_BASE}{HALO_API_PATH}"
 HALO_API_TOKEN = os.getenv("HALO_API_TOKEN", "")
 HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  # 默认缓存 1 小时
 
@@ -184,7 +185,6 @@ async def fetch_halo_posts_from_api(size: int = 3):
                 headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
 
             # Halo 控制台 API 端点：获取已发布的文章
-            base_url = "https://blog.kplwuyan.site"
             request_url = f"{HALO_API_URL}/posts"
             params = {
                 "size": size,
@@ -212,7 +212,7 @@ async def fetch_halo_posts_from_api(size: int = 3):
                 # 处理封面图
                 cover = spec.get('cover', '')
                 if cover and not cover.startswith('http'):
-                    cover = f"{base_url}{cover}"
+                    cover = f"{HALO_API_BASE}{cover}"
 
                 # 处理摘要
                 excerpt_obj = spec.get('excerpt', {})
@@ -312,7 +312,7 @@ async def fetch_halo_videos_from_api():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取 Halo 视频失败：{str(e)}")
 
-def generate_video_cover_url(permalink: str, base_url: str) -> str:
+def generate_video_cover_url(permalink: str) -> str:
     """根据视频 permalink 自动生成封面图 URL
     
     规则：/upload/test.mp4 -> /upload/test-cover.jpg
@@ -324,7 +324,7 @@ def generate_video_cover_url(permalink: str, base_url: str) -> str:
     filename = path.stem  # 不带后缀的文件名
     
     cover_path = f"{dirname}/{filename}-cover.jpg" if dirname else f"/{filename}-cover.jpg"
-    return f"{base_url.rstrip('/')}{cover_path}"
+    return f"{HALO_API_BASE.rstrip('/')}{cover_path}"
 
 # ============= 赛季缓存函数 =============
 
@@ -958,17 +958,17 @@ async def get_random_video():
     # 4. 解析字段
     display_name = video.get('spec', {}).get('displayName', '未命名视频')
     permalink = video.get('status', {}).get('permalink', '')
-    
+
     # 拼接完整 URL
     full_url = permalink
     if permalink and permalink.startswith('/'):
-        full_url = f"{base_url}{permalink}"
-    
+        full_url = f"{HALO_API_BASE}{permalink}"
+
     # 5. 自动生成封面图 URL
     cover_url = ""
     if permalink:
-        cover_url = generate_video_cover_url(permalink, base_url)
-    
+        cover_url = generate_video_cover_url(permalink)
+
     return {
         "code": 200,
         "message": "随机视频获取成功",
@@ -1019,26 +1019,25 @@ async def get_video_list():
                 raise
     
     # 处理视频信息
-    base_url = "https://blog.kplwuyan.site"
     videos = []
     for video in items:
         display_name = video.get('spec', {}).get('displayName', '未命名视频')
         permalink = video.get('status', {}).get('permalink', '')
-        
+
         full_url = permalink
         if permalink and permalink.startswith('/'):
-            full_url = f"{base_url}{permalink}"
-        
+            full_url = f"{HALO_API_BASE}{permalink}"
+
         cover_url = ""
         if permalink:
-            cover_url = generate_video_cover_url(permalink, base_url)
-        
+            cover_url = generate_video_cover_url(permalink)
+
         videos.append({
             "title": display_name,
             "url": full_url,
             "poster": cover_url
         })
-    
+
     return {
         "code": 200,
         "message": "视频列表获取成功",
