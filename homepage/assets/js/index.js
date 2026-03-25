@@ -232,7 +232,7 @@ async function fetchPosts() {
       throw new Error(result.message || '博客加载失败');
     }
 
-    // Halo API 返回结构：{ items: [{ spec: { title, excerpt, cover }, status: { permalink } }, ...] }
+    // Halo API 返回结构：{ items: [{ metadata, spec, status, owner, stats }], ... }
     const haloData = result.data;
     const items = haloData.items || [];
     
@@ -247,13 +247,36 @@ async function fetchPosts() {
       return;
     }
 
-    const posts = items.map(item => ({
-      title: item.spec?.title || '无标题',
-      excerpt: item.spec?.excerpt || '暂无摘要',
-      date: item.spec?.publishTime ? new Date(item.spec.publishTime).toISOString().split('T')[0] : '未知日期',
-      cover: item.spec?.cover || 'https://picsum.photos/400/200?random=1',
-      permalink: item.status?.permalink || '#'
-    }));
+    const posts = items.map(item => {
+      // 处理封面图：可能是相对路径或绝对路径
+      let cover = item.spec?.cover || '';
+      if (cover && !cover.startsWith('http')) {
+        cover = 'https://blog.kplwuyan.site' + cover;
+      }
+      if (!cover) {
+        cover = 'https://picsum.photos/400/200?random=1';
+      }
+      
+      // 处理摘要：可能是对象 { autoGenerate, raw } 或字符串
+      let excerpt = '';
+      if (typeof item.spec?.excerpt === 'object') {
+        excerpt = item.spec.excerpt.raw || item.status?.excerpt || '暂无摘要';
+      } else {
+        excerpt = item.spec?.excerpt || item.status?.excerpt || '暂无摘要';
+      }
+      
+      // 处理发布日期
+      const publishTime = item.spec?.publishTime;
+      const date = publishTime ? new Date(publishTime).toISOString().split('T')[0] : '未知日期';
+      
+      return {
+        title: item.spec?.title || '无标题',
+        excerpt: excerpt,
+        date: date,
+        cover: cover,
+        permalink: item.status?.permalink || '#'
+      };
+    });
 
     container.innerHTML = posts
       .map(

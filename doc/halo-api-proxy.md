@@ -23,7 +23,7 @@ homepage (前端) → backend (FastAPI 代理) → Halo API
 
 ```env
 # Halo 博客 API 配置
-HALO_API_URL=https://blog.kplwuyan.site/apis/api.halo.run/v1alpha1
+HALO_API_URL=https://blog.kplwuyan.site/apis/api.content.halo.run/v1alpha1
 HALO_API_TOKEN=your_actual_halo_api_token_here
 HALO_POSTS_CACHE_TTL_HOURS=1
 ```
@@ -33,6 +33,8 @@ HALO_POSTS_CACHE_TTL_HOURS=1
 | `HALO_API_URL` | Halo API 基础地址 | - |
 | `HALO_API_TOKEN` | Halo API 认证 Token | - |
 | `HALO_POSTS_CACHE_TTL_HOURS` | 文章列表缓存时间（小时） | 1 |
+
+**注意**：正确的 API 端点是 `/apis/api.content.halo.run/v1alpha1`（不是 `/apis/api.halo.run/v1alpha1`）
 
 ### 3. 重启后端服务
 
