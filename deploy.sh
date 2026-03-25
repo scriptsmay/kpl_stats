@@ -29,15 +29,23 @@ npm install
 npm run build
 cd ..
 
-# 2. 复制文件到服务器
-echo -e "${YELLOW}[2/5] 上传文件到服务器...${NC}"
+# 2. 构建 Homepage（包含压缩和配置生成）
+echo -e "${YELLOW}[2/5] 构建 Homepage（生成配置 + 压缩）...${NC}"
+cd homepage
+npm install
+npm run build
+cd ..
+
+# 3. 复制文件到服务器
+echo -e "${YELLOW}[3/5] 上传文件到服务器...${NC}"
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "mkdir -p $DEPLOY_PATH $FRONTEND_TARGET"
 scp -P $SERVER_PORT -r frontend/dist/* $SERVER_USER@$SERVER_HOST:$FRONTEND_TARGET
+scp -P $SERVER_PORT -r homepage/dist/* $SERVER_USER@$SERVER_HOST:$FRONTEND_TARGET/
 scp -P $SERVER_PORT -r backend $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 scp -P $SERVER_PORT docker-compose.backend.yml $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 
-# 3. 部署后端
-echo -e "${YELLOW}[3/5] 部署后端服务...${NC}"
+# 4. 部署后端
+echo -e "${YELLOW}[4/5] 部署后端服务...${NC}"
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'ENDSSH'
   cd /root/kpl_stats
   
@@ -53,8 +61,8 @@ ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'ENDSSH'
   docker compose -f docker-compose.backend.yml up -d
 ENDSSH
 
-# 4. 配置 OpenResty（首次部署需要）
-echo -e "${YELLOW}[4/5] 检查 OpenResty 配置...${NC}"
+# 5. 配置 OpenResty（首次部署需要）
+echo -e "${YELLOW}[5/5] 检查 OpenResty 配置...${NC}"
 read -p "是否需要配置 OpenResty？(y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -63,8 +71,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
   echo -e "${GREEN}OpenResty 配置已更新${NC}"
 fi
 
-# 5. 检查服务状态
-echo -e "${YELLOW}[5/5] 检查服务状态...${NC}"
+# 6. 检查服务状态
+echo -e "${YELLOW}[6/5] 检查服务状态...${NC}"
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'ENDSSH'
   echo "--- 后端容器状态 ---"
   docker ps | grep kpl-stats-backend
