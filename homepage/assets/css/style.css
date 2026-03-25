@@ -1,14 +1,12 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ============================================
+   无言粉丝应援站 · 主样式表
+   ============================================ */
 
 :root {
   --primary: #00d4ff;
   --primary-dark: #0099cc;
   --primary-glow: rgba(0, 212, 255, 0.3);
-  --secondary: #ff6b6b;
+  --secondary: #ff9f4d;
   --bg-dark: #0a0e1a;
   --bg-card: #11151f;
   --bg-elevated: #1a1f2a;
@@ -16,7 +14,7 @@
   --text-secondary: #b0b3c0;
   --text-muted: #6b6f7a;
   --border: rgba(255, 255, 255, 0.08);
-  --gradient-hero: linear-gradient(135deg, #0a0e1a 0%, #1a1f2a 100%);
+  --gradient-hero: linear-gradient(135deg, #0a0e1a 0%, #1a2a3a 100%);
   --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.4);
@@ -26,12 +24,42 @@
   --radius-lg: 24px;
 }
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+.logo {
+  font-family:
+    'Space Grotesk',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
 }
 
 ::-webkit-scrollbar {
@@ -45,7 +73,7 @@ body {
   border-radius: 4px;
 }
 
-/* 粉丝站标识 */
+/* ========== 粉丝站标识 ========== */
 .fan-badge {
   position: fixed;
   bottom: 20px;
@@ -59,10 +87,9 @@ body {
   color: var(--text-muted);
   border: 1px solid var(--border);
   pointer-events: none;
-  font-family: monospace;
 }
 
-/* 导航栏 */
+/* ========== 导航栏 ========== */
 .navbar {
   position: fixed;
   top: 0;
@@ -92,7 +119,6 @@ body {
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
-  font-family: 'Space Grotesk', monospace;
   background: linear-gradient(135deg, var(--primary) 0%, #fff 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -141,18 +167,19 @@ body {
   width: 25px;
   height: 2px;
   background: var(--text-primary);
+  transition: 0.3s;
 }
 
-/* Hero区域 */
+/* ========== Hero区域 ========== */
 .hero {
-  min-height: 90vh;
+  min-height: 85vh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   position: relative;
   overflow: hidden;
-  background: var(--gradient-hero);
+  background: linear-gradient(135deg, #0a0e1a 0%, #0f1a2a 100%);
   padding: 100px 2rem 60px;
 }
 
@@ -186,6 +213,7 @@ body {
   z-index: 2;
   max-width: 800px;
 }
+
 .hero-badge {
   display: inline-block;
   padding: 0.4rem 1rem;
@@ -196,10 +224,10 @@ body {
   color: var(--primary);
   margin-bottom: 1.5rem;
 }
+
 .hero h1 {
   font-size: 3.5rem;
   font-weight: 800;
-  font-family: 'Space Grotesk', monospace;
   margin-bottom: 1rem;
 }
 .hero h1 .highlight {
@@ -210,6 +238,12 @@ body {
   color: var(--text-secondary);
   margin-bottom: 2rem;
 }
+.fan-name {
+  font-size: 1.2rem;
+  color: var(--primary);
+  margin-top: 1rem;
+}
+
 .hero-buttons {
   display: flex;
   gap: 1rem;
@@ -217,6 +251,7 @@ body {
   flex-wrap: wrap;
 }
 
+/* ========== 按钮 ========== */
 .btn-primary,
 .btn-outline {
   padding: 0.8rem 1.8rem;
@@ -244,6 +279,7 @@ body {
   transform: translateY(-2px);
 }
 
+/* ========== 容器和区块 ========== */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -260,7 +296,6 @@ section {
 .section-title h2 {
   font-size: 2.2rem;
   font-weight: 700;
-  font-family: 'Space Grotesk', monospace;
   margin-bottom: 0.5rem;
 }
 .section-title p {
@@ -268,7 +303,73 @@ section {
   font-size: 1rem;
 }
 
-/* 数据卡片 */
+/* ========== 个人资料卡片 ========== */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.8rem;
+}
+.info-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.info-item {
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0;
+}
+.info-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.info-value {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+.social-links-card {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.social-link {
+  background: var(--bg-elevated);
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+.social-link:hover {
+  background: var(--primary);
+  color: var(--bg-dark);
+}
+
+/* ========== 数据卡片 ========== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -276,7 +377,6 @@ section {
 }
 .stat-card {
   background: var(--gradient-card);
-  backdrop-filter: blur(10px);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 1.8rem 1rem;
@@ -290,7 +390,6 @@ section {
 .stat-value {
   font-size: 2.5rem;
   font-weight: 800;
-  font-family: 'Space Grotesk', monospace;
   color: var(--primary);
 }
 .stat-label {
@@ -298,14 +397,57 @@ section {
   margin-top: 0.5rem;
   font-size: 0.85rem;
 }
-.data-note {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.7rem;
-  color: var(--text-muted);
+
+/* ========== 国服英雄 ========== */
+.heroes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+}
+.hero-tag {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 0.5rem 1.2rem;
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-/* 博客卡片 */
+/* ========== 高光时刻 ========== */
+.highlights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.highlight-item {
+  background: var(--bg-card);
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
+  transition: all 0.3s;
+}
+.highlight-item:hover {
+  background: var(--bg-elevated);
+  transform: translateX(5px);
+}
+.highlight-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.highlight-desc {
+  font-size: 0.95rem;
+  margin-top: 0.3rem;
+}
+.tag {
+  background: rgba(0, 212, 255, 0.1);
+  padding: 0.2rem 0.8rem;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+/* ========== 博客卡片 ========== */
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -329,6 +471,7 @@ section {
   width: 100%;
   height: 180px;
   object-fit: cover;
+  background: var(--bg-elevated);
 }
 .blog-card-content {
   padding: 1.5rem;
@@ -342,48 +485,13 @@ section {
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
-  line-height: 1.4;
 }
 .blog-card-excerpt {
   color: var(--text-secondary);
   font-size: 0.85rem;
-  line-height: 1.5;
 }
 
-/* 粉丝作品区 */
-.fanworks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-.fanwork-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-.fanwork-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--primary);
-}
-.fanwork-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  background: var(--bg-elevated);
-}
-.fanwork-content {
-  padding: 1rem;
-  text-align: center;
-}
-.fanwork-author {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-/* 应援入口 */
+/* ========== 应援区 ========== */
 .support-section {
   background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
   border-radius: var(--radius-lg);
@@ -399,7 +507,7 @@ section {
   margin-top: 2rem;
 }
 
-/* Footer */
+/* ========== Footer ========== */
 .footer {
   background: var(--bg-card);
   border-top: 1px solid var(--border);
@@ -411,20 +519,20 @@ section {
   margin: 0 auto;
   padding: 0 2rem;
 }
-.social-links {
+.social-links-footer {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
-.social-links a {
+.social-links-footer a {
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s;
 }
-.social-links a:hover {
+.social-links-footer a:hover {
   color: var(--primary);
 }
 .copyright {
@@ -440,6 +548,23 @@ section {
   border-top: 1px solid var(--border);
 }
 
+/* ========== 加载动画 ========== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .nav-links {
     display: none;
@@ -461,20 +586,5 @@ section {
   }
   .support-section {
     padding: 2rem;
-  }
-}
-
-.skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
   }
 }
