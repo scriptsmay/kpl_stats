@@ -1,0 +1,91 @@
+# KPL Stats CI/CD 部署流程
+# 推送到 main 分支时自动部署
+
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 设置 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # 3. 构建前端
+      - name: Build frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+      # 4. 通过 SSH 部署前端文件到服务器
+      - name: Deploy frontend to server
+        uses: easingthemes/ssh-deploy@v4
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: ${{ secrets.SERVER_PORT || 22 }}
+
+          # 前端部署
+          SOURCE: 'frontend/dist/'
+          TARGET: ${{ secrets.FRONTEND_TARGET }}
+          EXCLUDE: '.git, node_modules'
+
+      # 5. 远程执行后端部署命令
+      - name: Deploy Backend Services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            # 1. 创建部署目录（如果不存在）
+            mkdir -p ${{ secrets.DEPLOY_PATH }}
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # 2. 克隆或更新代码
+            if [ ! -d ".git" ]; then
+              echo "首次部署，克隆代码..."
+              git clone https://github.com/${{ github.repository }}.git .
+            else
+              echo "更新代码..."
+              git fetch --all
+              git reset --hard origin/main
+            fi
+
+            # 3. 创建环境变量文件（从 Secrets）
+            echo "创建后端环境变量..."
+            cat > backend/.env << EOF
+            THIRD_PARTY_API_URL=${{ secrets.THIRD_PARTY_API_URL }}
+            EOF
+
+            # 4. 构建并启动容器
+            echo "启动后端服务..."
+            docker-compose -f docker-compose.backend.yml down
+            docker-compose -f docker-compose.backend.yml build
+            docker-compose -f docker-compose.backend.yml up -d
+
+            # 5. 清理悬空镜像
+            docker image prune -f
+
+            # 6. 重载 OpenResty（如果配置有变化）
+            docker exec openresty nginx -s reload 2>/dev/null || true
+
+            echo "部署完成！"

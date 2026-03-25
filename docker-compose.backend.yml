@@ -1,0 +1,32 @@
+# KPL Stats 后端服务
+# 使用方式：docker-compose -f docker-compose.backend.yml up -d
+
+services:
+  kpl-stats-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kpl-stats-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - THIRD_PARTY_API_URL=${THIRD_PARTY_API_URL}
+      - API_KEY=${API_KEY:-}
+      - CACHE_TTL_HOURS=${CACHE_TTL_HOURS:-24}
+    volumes:
+      # 持久化缓存文件
+      - ./backend/data:/app/data
+    networks:
+      - kpl-network
+    # 资源限制（2G 内存服务器优化）
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+networks:
+  kpl-network:
+    driver: bridge
+    name: kpl-network

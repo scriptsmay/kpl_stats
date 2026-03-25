@@ -49,6 +49,9 @@ frontend/.env.production
 *.swp
 *.swo
 
+# Qwen Code
+.qwen/
+
 # 测试文件（如包含敏感数据）
 test/*.json
 !test/.gitkeep
