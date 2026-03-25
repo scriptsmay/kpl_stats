@@ -19,6 +19,7 @@ conda-meta/
 # Python 环境变量
 backend/.env
 !backend/.env.example
+.env
 
 # 缓存文件（自动生成）
 backend/cache.json

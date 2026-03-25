@@ -70,15 +70,15 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # 3. 创建环境变量文件（从 Secrets）
+            # 3. 创建环境变量文件（从 Secrets）- 放在与 docker-compose 同级目录
             echo "创建后端环境变量..."
-            echo "THIRD_PARTY_API_URL=${{ secrets.THIRD_PARTY_API_URL }}" > backend/.env
-            echo "API_KEY=${{ secrets.API_KEY }}" >> backend/.env
-            echo "CACHE_TTL_HOURS=${{ secrets.CACHE_TTL_HOURS || 24 }}" >> backend/.env
+            echo "THIRD_PARTY_API_URL=${{ secrets.THIRD_PARTY_API_URL }}" > .env
+            echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+            echo "CACHE_TTL_HOURS=${{ secrets.CACHE_TTL_HOURS || 24 }}" >> .env
             
             # 验证环境变量
             echo "环境变量已创建："
-            cat backend/.env
+            cat .env
 
             # 4. 构建并启动容器
             echo "启动后端服务..."
