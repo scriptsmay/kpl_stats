@@ -207,42 +207,86 @@ async function fetchStats() {
   }
 }
 
-// 获取博客最新文章（对接 Halo API）
+// 获取博客最新文章（对接后端 Halo API 代理）
 async function fetchPosts() {
   const container = document.getElementById('blogGrid');
   if (!container) return;
 
-  try {
-    // TODO: 替换为真实 API 地址
-    // const response = await fetch('https://blog.kplwuyan.site/api/content/posts?size=3');
-    // const posts = await response.json();
+  // 显示加载状态
+  container.innerHTML = `
+    <div class="blog-card loading"><div class="skeleton" style="height: 180px"></div></div>
+    <div class="blog-card loading"><div class="skeleton" style="height: 180px"></div></div>
+    <div class="blog-card loading"><div class="skeleton" style="height: 180px"></div></div>
+  `;
 
-    // 模拟数据 - 上线后替换为真实数据
-    const posts = [
-      {
-        title: '无言专访：关于新赛季的目标与期待',
-        excerpt: '在最近的采访中，无言分享了他对新赛季的看法...',
-        date: '2026-03-20',
-        cover: 'https://picsum.photos/400/200?random=1',
-      },
-      {
-        title: '训练日记：团战意识提升之路',
-        excerpt: '从个人技术到团队配合，无言的训练心得分享...',
-        date: '2026-03-15',
-        cover: 'https://picsum.photos/400/200?random=2',
-      },
-      {
-        title: '品牌代言官宣',
-        excerpt: '正式成为 XX 品牌代言人...',
-        date: '2026-03-10',
-        cover: 'https://picsum.photos/400/200?random=3',
-      },
-    ];
+  try {
+    const response = await fetch(`${API_BASE_URL}/blog/posts?size=3`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.code !== 200) {
+      throw new Error(result.message || '博客加载失败');
+    }
+
+    // Halo API 返回结构：{ items: [{ spec: { title, excerpt, cover }, status: { permalink } }, ...] }
+    const haloData = result.data;
+    const items = haloData.items || [];
+    
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="blog-card">
+          <div class="blog-card-content">
+            <p class="blog-card-excerpt">暂无文章</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const posts = items.map(item => ({
+      title: item.spec?.title || '无标题',
+      excerpt: item.spec?.excerpt || '暂无摘要',
+      date: item.spec?.publishTime ? new Date(item.spec.publishTime).toISOString().split('T')[0] : '未知日期',
+      cover: item.spec?.cover || 'https://picsum.photos/400/200?random=1',
+      permalink: item.status?.permalink || '#'
+    }));
 
     container.innerHTML = posts
       .map(
         (p) => `
-            <a href="https://blog.kplwuyan.site/post/${p.title.replace(/\s/g, '-')}" target="_blank" class="blog-card">
+            <a href="https://blog.kplwuyan.site${p.permalink}" target="_blank" class="blog-card">
+                <img src="${p.cover}" class="blog-card-img" alt="${p.title}" onerror="this.src='https://picsum.photos/400/200?random=1'">
+                <div class="blog-card-content">
+                    <div class="blog-card-date">${p.date}</div>
+                    <h3 class="blog-card-title">${p.title}</h3>
+                    <p class="blog-card-excerpt">${p.excerpt}</p>
+                </div>
+            </a>
+        `,
+      )
+      .join('');
+    
+    console.log('[Posts] 博客加载成功:', result.message);
+  } catch (error) {
+    console.error('[Posts] 获取博客失败:', error);
+    // 错误时显示默认文章（降级处理）
+    const fallbackPosts = [
+      {
+        title: '暂无文章',
+        excerpt: '博客加载中，请稍后重试',
+        date: new Date().toISOString().split('T')[0],
+        cover: 'https://picsum.photos/400/200?random=1',
+      },
+    ];
+
+    container.innerHTML = fallbackPosts
+      .map(
+        (p) => `
+            <a href="https://blog.kplwuyan.site" target="_blank" class="blog-card">
                 <img src="${p.cover}" class="blog-card-img" alt="${p.title}">
                 <div class="blog-card-content">
                     <div class="blog-card-date">${p.date}</div>
@@ -253,8 +297,6 @@ async function fetchPosts() {
         `,
       )
       .join('');
-  } catch (error) {
-    console.error('[Posts] 获取博客失败:', error);
   }
 }
 

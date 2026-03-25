@@ -27,6 +27,11 @@ DATA_DIR = Path(__file__).parent / "data"
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小时
 SEASONS_API_URL = os.getenv("SEASONS_API_URL", "http://47.102.210.150:5006/seasons/list")
 
+# Halo 博客 API 配置
+HALO_API_URL = os.getenv("HALO_API_URL", "https://blog.kplwuyan.site/apis/api.halo.run/v1alpha1")
+HALO_API_TOKEN = os.getenv("HALO_API_TOKEN", "")
+HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  # 默认缓存 1 小时
+
 # 确保 data 目录存在
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -124,6 +129,82 @@ def get_archive_list():
 
     # 按日期降序排序
     return sorted(archives, key=lambda x: x["date"], reverse=True)
+
+# ============= Halo 博客缓存函数 =============
+
+def get_halo_posts_cache_file() -> Path:
+    """获取 Halo 文章列表缓存文件路径"""
+    return DATA_DIR / "cache.halo.posts.json"
+
+def save_halo_posts_cache(data: dict):
+    """保存 Halo 文章列表到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "data": data
+    }
+    cache_file = get_halo_posts_cache_file()
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] Halo 文章列表缓存已保存")
+
+def load_halo_posts_cache():
+    """从本地文件加载 Halo 文章列表缓存"""
+    cache_file = get_halo_posts_cache_file()
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取 Halo 缓存失败：{e}")
+            return None
+    return None
+
+def is_halo_posts_cache_valid(cache_data: dict) -> bool:
+    """检查 Halo 文章列表缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return datetime.now() - cache_time < timedelta(hours=HALO_POSTS_CACHE_TTL_HOURS)
+    except (KeyError, ValueError):
+        return False
+
+async def fetch_halo_posts_from_api(size: int = 3):
+    """从 Halo API 获取文章列表"""
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if HALO_API_TOKEN:
+                headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
+            
+            # Halo API 端点：获取已发布的文章
+            request_url = f"{HALO_API_URL}/posts"
+            params = {
+                "size": size,
+                "published": True,
+                "sort": "publishTime,desc"
+            }
+            
+            print(f"[{datetime.now()}] 开始请求 Halo API: {request_url}")
+            response = await client.get(
+                request_url,
+                headers=headers,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            halo_data = response.json()
+            print(f"[{datetime.now()}] Halo API 请求成功，共 {len(halo_data.get('items', []))} 篇文章")
+            return halo_data
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Halo API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Halo API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取 Halo 文章失败：{str(e)}")
+
+# ============= 赛季缓存函数 =============
 
 def is_season_cache_valid():
     """检查赛季名称缓存是否有效"""
@@ -554,7 +635,7 @@ async def get_season_name_map_api():
         # 检查缓存是否有效，无效则获取
         if not is_season_cache_valid():
             await fetch_seasons_from_api('KPL')
-        
+
         name_map = get_season_name_map()
         return {
             "code": 200,
@@ -565,3 +646,135 @@ async def get_season_name_map_api():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取赛季名称映射失败：{str(e)}")
+
+# ============= Halo 博客 API 接口 =============
+
+@app.get("/api/blog/posts")
+async def get_blog_posts(
+    size: int = Query(3, description="获取文章数量"),
+    force_refresh: bool = Query(False, description="是否强制刷新缓存")
+):
+    """
+    获取博客文章列表（带缓存）
+    
+    参数：
+    - size: 获取文章数量，默认 3 篇
+    - force_refresh: 设置为 true 时强制从 Halo API 获取最新数据
+    """
+    # 如果强制刷新，直接请求 Halo API
+    if force_refresh:
+        try:
+            data = await fetch_halo_posts_from_api(size)
+            save_halo_posts_cache(data)
+            return {
+                "code": 200,
+                "message": "数据已强制刷新",
+                "data": data,
+                "from_cache": False,
+                "refresh_time": datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
+
+    # 非强制刷新，尝试使用缓存
+    cache_data = load_halo_posts_cache()
+
+    # 检查缓存是否有效
+    if cache_data and is_halo_posts_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用 Halo 缓存数据，缓存时间：{cache_data['timestamp']}")
+        return {
+            "code": 200,
+            "message": "数据来自缓存",
+            "data": cache_data["data"],
+            "from_cache": True,
+            "cache_time": cache_data["timestamp"]
+        }
+
+    # 缓存无效，从 Halo API 获取
+    try:
+        print(f"[{datetime.now()}] 缓存无效，从 Halo API 获取数据")
+        data = await fetch_halo_posts_from_api(size)
+        save_halo_posts_cache(data)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": data,
+            "from_cache": False,
+            "refresh_time": datetime.now().isoformat()
+        }
+    except HTTPException:
+        if cache_data:
+            print(f"[{datetime.now()}] Halo API 失败，返回过期缓存")
+            return {
+                "code": 200,
+                "message": "数据来自过期缓存（Halo API 暂时不可用）",
+                "data": cache_data["data"],
+                "from_cache": True,
+                "cache_time": cache_data["timestamp"],
+                "is_expired": True
+            }
+        raise
+
+@app.get("/api/blog/cache_info")
+async def get_halo_cache_info():
+    """
+    获取 Halo 文章缓存信息
+    """
+    cache_data = load_halo_posts_cache()
+    cache_file = get_halo_posts_cache_file()
+
+    if not cache_data:
+        return {
+            "code": 200,
+            "message": "缓存不存在",
+            "data": {
+                "exists": False,
+                "cache_file": str(cache_file)
+            }
+        }
+
+    cache_time = datetime.fromisoformat(cache_data["timestamp"])
+    is_valid = is_halo_posts_cache_valid(cache_data)
+
+    return {
+        "code": 200,
+        "message": "缓存信息",
+        "data": {
+            "exists": True,
+            "cache_file": str(cache_file),
+            "cache_time": cache_data["timestamp"],
+            "is_valid": is_valid,
+            "expires_in": f"{HALO_POSTS_CACHE_TTL_HOURS - (datetime.now() - cache_time).total_seconds() / 3600:.1f}小时" if is_valid else "已过期",
+            "file_size": cache_file.stat().st_size if cache_file.exists() else 0
+        }
+    }
+
+@app.delete("/api/blog/cache")
+async def clear_halo_cache():
+    """
+    清除 Halo 文章缓存
+    """
+    cache_file = get_halo_posts_cache_file()
+    if cache_file.exists():
+        try:
+            os.remove(cache_file)
+            return {
+                "code": 200,
+                "message": "缓存已清除",
+                "data": {
+                    "cache_file": str(cache_file),
+                    "cleared_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"清除缓存失败：{str(e)}")
+    else:
+        return {
+            "code": 200,
+            "message": "缓存文件不存在",
+            "data": {
+                "cache_file": str(cache_file)
+            }
+        }
