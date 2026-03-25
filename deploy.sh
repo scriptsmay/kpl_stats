@@ -48,9 +48,9 @@ ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'ENDSSH'
   fi
   
   # 构建并启动容器
-  docker-compose -f docker-compose.backend.yml down
-  docker-compose -f docker-compose.backend.yml build
-  docker-compose -f docker-compose.backend.yml up -d
+  docker compose -f docker-compose.backend.yml down
+  docker compose -f docker-compose.backend.yml build
+  docker compose -f docker-compose.backend.yml up -d
 ENDSSH
 
 # 4. 配置 OpenResty（首次部署需要）
