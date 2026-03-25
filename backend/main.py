@@ -27,6 +27,16 @@ DATA_DIR = Path(__file__).parent / "data"
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小时
 SEASONS_API_URL = os.getenv("SEASONS_API_URL", "http://47.102.210.150:5006/seasons/list")
 
+# Halo 博客 API 配置
+HALO_API_BASE = os.getenv("HALO_API_BASE", "https://blog.kplwuyan.site")
+HALO_API_URL = f"{HALO_API_BASE}/apis/api.console.halo.run/v1alpha1"
+HALO_API_TOKEN = os.getenv("HALO_API_TOKEN", "")
+HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  # 默认缓存 1 小时
+
+# Halo 视频 API 配置
+HALO_VIDEO_GROUP_ID = os.getenv("HALO_VIDEO_GROUP_ID", "attachment-group-25ptmssm")
+HALO_VIDEO_CACHE_TTL_SECONDS = int(os.getenv("HALO_VIDEO_CACHE_TTL_SECONDS", "600"))  # 默认缓存 10 分钟
+
 # 确保 data 目录存在
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -124,6 +134,198 @@ def get_archive_list():
 
     # 按日期降序排序
     return sorted(archives, key=lambda x: x["date"], reverse=True)
+
+# ============= Halo 博客缓存函数 =============
+
+def get_halo_posts_cache_file() -> Path:
+    """获取 Halo 文章列表缓存文件路径"""
+    return DATA_DIR / "cache.halo.posts.json"
+
+def save_halo_posts_cache(data: dict):
+    """保存 Halo 文章列表到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "data": data
+    }
+    cache_file = get_halo_posts_cache_file()
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] Halo 文章列表缓存已保存")
+
+def load_halo_posts_cache():
+    """从本地文件加载 Halo 文章列表缓存"""
+    cache_file = get_halo_posts_cache_file()
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取 Halo 缓存失败：{e}")
+            return None
+    return None
+
+def is_halo_posts_cache_valid(cache_data: dict) -> bool:
+    """检查 Halo 文章列表缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return datetime.now() - cache_time < timedelta(hours=HALO_POSTS_CACHE_TTL_HOURS)
+    except (KeyError, ValueError):
+        return False
+
+async def fetch_halo_posts_from_api(size: int = 3):
+    """从 Halo API 获取文章列表"""
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if HALO_API_TOKEN:
+                headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
+
+            # Halo 控制台 API 端点：获取已发布的文章
+            request_url = f"{HALO_API_URL}/posts"
+            params = {
+                "size": size,
+                "publishPhase": "PUBLISHED",
+                "sort": "spec.publishTime,desc"
+            }
+
+            print(f"[{datetime.now()}] 开始请求 Halo API: {request_url}")
+            response = await client.get(
+                request_url,
+                headers=headers,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            halo_data = response.json()
+
+            # 精简数据，只返回前端需要的字段
+            simplified_items = []
+            for item in halo_data.get('items', []):
+                post = item.get('post', {})
+                spec = post.get('spec', {})
+                status = post.get('status', {})
+
+                # 处理封面图
+                cover = spec.get('cover', '')
+                if cover and not cover.startswith('http'):
+                    cover = f"{HALO_API_BASE}{cover}"
+
+                # 处理摘要
+                excerpt_obj = spec.get('excerpt', {})
+                excerpt = excerpt_obj.get('raw', '') if isinstance(excerpt_obj, dict) else excerpt_obj
+                if not excerpt:
+                    excerpt = status.get('excerpt', '')
+
+                simplified_items.append({
+                    "title": spec.get('title', '无标题'),
+                    "cover": cover,
+                    "excerpt": excerpt,
+                    "publishTime": spec.get('publishTime', ''),
+                    "permalink": status.get('permalink', '#')
+                })
+
+            print(f"[{datetime.now()}] Halo API 请求成功，共 {len(simplified_items)} 篇文章")
+            return {"items": simplified_items}
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Halo API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Halo API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取 Halo 文章失败：{str(e)}")
+
+# ============= Halo 视频缓存函数 =============
+
+def get_halo_video_cache_file() -> Path:
+    """获取 Halo 视频列表缓存文件路径"""
+    return DATA_DIR / "cache.halo.videos.json"
+
+def save_halo_video_cache(data: list):
+    """保存 Halo 视频列表到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "items": data
+    }
+    cache_file = get_halo_video_cache_file()
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] Halo 视频列表缓存已保存")
+
+def load_halo_video_cache():
+    """从本地文件加载 Halo 视频列表缓存"""
+    cache_file = get_halo_video_cache_file()
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取 Halo 视频缓存失败：{e}")
+            return None
+    return None
+
+def is_halo_video_cache_valid(cache_data: dict) -> bool:
+    """检查 Halo 视频列表缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return (datetime.now() - cache_time).total_seconds() < HALO_VIDEO_CACHE_TTL_SECONDS
+    except (KeyError, ValueError):
+        return False
+
+async def fetch_halo_videos_from_api():
+    """从 Halo API 获取视频附件列表"""
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if HALO_API_TOKEN:
+                headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
+            
+            # Halo 控制台 API 端点：获取指定分组的视频附件
+            request_url = f"{HALO_API_URL}/attachments"
+            params = {
+                "fieldSelector": f"spec.groupName={HALO_VIDEO_GROUP_ID}",
+                "accepts": "video/*",
+                "size": 100
+            }
+            
+            print(f"[{datetime.now()}] 开始请求 Halo 视频 API: {request_url}")
+            response = await client.get(
+                request_url,
+                headers=headers,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            halo_data = response.json()
+            items = halo_data.get('items', [])
+            print(f"[{datetime.now()}] Halo 视频 API 请求成功，共 {len(items)} 个视频")
+            return items
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Halo 视频 API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Halo 视频 API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取 Halo 视频失败：{str(e)}")
+
+def generate_video_cover_url(permalink: str) -> str:
+    """根据视频 permalink 自动生成封面图 URL
+    
+    规则：/upload/test.mp4 -> /upload/test-cover.jpg
+    """
+    from pathlib import PurePosixPath
+    
+    path = PurePosixPath(permalink)
+    dirname = str(path.parent) if path.parent != PurePosixPath('.') else ''
+    filename = path.stem  # 不带后缀的文件名
+    
+    cover_path = f"{dirname}/{filename}-cover.jpg" if dirname else f"/{filename}-cover.jpg"
+    return f"{HALO_API_BASE.rstrip('/')}{cover_path}"
+
+# ============= 赛季缓存函数 =============
 
 def is_season_cache_valid():
     """检查赛季名称缓存是否有效"""
@@ -554,7 +756,7 @@ async def get_season_name_map_api():
         # 检查缓存是否有效，无效则获取
         if not is_season_cache_valid():
             await fetch_seasons_from_api('KPL')
-        
+
         name_map = get_season_name_map()
         return {
             "code": 200,
@@ -565,3 +767,346 @@ async def get_season_name_map_api():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取赛季名称映射失败：{str(e)}")
+
+# ============= Halo 博客 API 接口 =============
+
+@app.get("/api/blog/posts")
+async def get_blog_posts(
+    size: int = Query(3, description="获取文章数量"),
+    force_refresh: bool = Query(False, description="是否强制刷新缓存")
+):
+    """
+    获取博客文章列表（带缓存）
+    
+    参数：
+    - size: 获取文章数量，默认 3 篇
+    - force_refresh: 设置为 true 时强制从 Halo API 获取最新数据
+    """
+    # 如果强制刷新，直接请求 Halo API
+    if force_refresh:
+        try:
+            data = await fetch_halo_posts_from_api(size)
+            save_halo_posts_cache(data)
+            return {
+                "code": 200,
+                "message": "数据已强制刷新",
+                "data": data,
+                "from_cache": False,
+                "refresh_time": datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
+
+    # 非强制刷新，尝试使用缓存
+    cache_data = load_halo_posts_cache()
+
+    # 检查缓存是否有效
+    if cache_data and is_halo_posts_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用 Halo 缓存数据，缓存时间：{cache_data['timestamp']}")
+        return {
+            "code": 200,
+            "message": "数据来自缓存",
+            "data": cache_data["data"],
+            "from_cache": True,
+            "cache_time": cache_data["timestamp"]
+        }
+
+    # 缓存无效，从 Halo API 获取
+    try:
+        print(f"[{datetime.now()}] 缓存无效，从 Halo API 获取数据")
+        data = await fetch_halo_posts_from_api(size)
+        save_halo_posts_cache(data)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": data,
+            "from_cache": False,
+            "refresh_time": datetime.now().isoformat()
+        }
+    except HTTPException:
+        if cache_data:
+            print(f"[{datetime.now()}] Halo API 失败，返回过期缓存")
+            return {
+                "code": 200,
+                "message": "数据来自过期缓存（Halo API 暂时不可用）",
+                "data": cache_data["data"],
+                "from_cache": True,
+                "cache_time": cache_data["timestamp"],
+                "is_expired": True
+            }
+        raise
+
+@app.get("/api/blog/cache_info")
+async def get_halo_cache_info():
+    """
+    获取 Halo 文章缓存信息
+    """
+    cache_data = load_halo_posts_cache()
+    cache_file = get_halo_posts_cache_file()
+
+    if not cache_data:
+        return {
+            "code": 200,
+            "message": "缓存不存在",
+            "data": {
+                "exists": False,
+                "cache_file": str(cache_file)
+            }
+        }
+
+    cache_time = datetime.fromisoformat(cache_data["timestamp"])
+    is_valid = is_halo_posts_cache_valid(cache_data)
+
+    return {
+        "code": 200,
+        "message": "缓存信息",
+        "data": {
+            "exists": True,
+            "cache_file": str(cache_file),
+            "cache_time": cache_data["timestamp"],
+            "is_valid": is_valid,
+            "expires_in": f"{HALO_POSTS_CACHE_TTL_HOURS - (datetime.now() - cache_time).total_seconds() / 3600:.1f}小时" if is_valid else "已过期",
+            "file_size": cache_file.stat().st_size if cache_file.exists() else 0
+        }
+    }
+
+@app.delete("/api/blog/cache")
+async def clear_halo_cache():
+    """
+    清除 Halo 文章缓存
+    """
+    cache_file = get_halo_posts_cache_file()
+    if cache_file.exists():
+        try:
+            os.remove(cache_file)
+            return {
+                "code": 200,
+                "message": "缓存已清除",
+                "data": {
+                    "cache_file": str(cache_file),
+                    "cleared_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"清除缓存失败：{str(e)}")
+    else:
+        return {
+            "code": 200,
+            "message": "缓存文件不存在",
+            "data": {
+                "cache_file": str(cache_file)
+            }
+        }
+
+# ============= Halo 视频 API 接口 =============
+
+@app.get("/api/video/random")
+async def get_random_video():
+    """
+    随机获取一个视频地址（带缓存）
+    
+    从 Halo 博客的视频附件分组中随机返回一个视频，包含：
+    - title: 视频标题
+    - url: 视频完整 URL
+    - poster: 自动生成的封面图 URL
+    
+    缓存策略：
+    - 视频列表缓存 10 分钟（可配置 HALO_VIDEO_CACHE_TTL_SECONDS）
+    - 每次请求从缓存列表中随机选择一个视频
+    """
+    import random
+    
+    base_url = "https://blog.kplwuyan.site"
+    items = []
+    
+    # 1. 检查缓存
+    cache_data = load_halo_video_cache()
+    if cache_data and is_halo_video_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用 Halo 视频缓存，缓存时间：{cache_data['timestamp']}")
+        items = cache_data.get("items", [])
+    
+    # 2. 缓存无效或为空，从 API 获取
+    if not items:
+        try:
+            print(f"[{datetime.now()}] 缓存无效，从 Halo API 获取视频列表")
+            items = await fetch_halo_videos_from_api()
+            if items:
+                save_halo_video_cache(items)
+        except HTTPException as e:
+            # API 失败时，如果有过期缓存，使用过期缓存
+            if cache_data and cache_data.get("items"):
+                print(f"[{datetime.now()}] Halo API 失败，使用过期缓存")
+                items = cache_data.get("items", [])
+            else:
+                raise HTTPException(status_code=500, detail=f"获取视频失败：{e.detail}")
+        except Exception as e:
+            if cache_data and cache_data.get("items"):
+                print(f"[{datetime.now()}] Halo API 失败，使用过期缓存")
+                items = cache_data.get("items", [])
+            else:
+                raise HTTPException(status_code=500, detail=f"获取视频失败：{str(e)}")
+    
+    # 3. 随机选择一个视频
+    if not items:
+        raise HTTPException(status_code=500, detail="视频列表为空，无法随机选择")
+    
+    video = random.choice(items)
+    
+    # 4. 解析字段
+    display_name = video.get('spec', {}).get('displayName', '未命名视频')
+    permalink = video.get('status', {}).get('permalink', '')
+
+    # 拼接完整 URL
+    full_url = permalink
+    if permalink and permalink.startswith('/'):
+        full_url = f"{HALO_API_BASE}{permalink}"
+
+    # 5. 自动生成封面图 URL
+    cover_url = ""
+    if permalink:
+        cover_url = generate_video_cover_url(permalink)
+
+    return {
+        "code": 200,
+        "message": "随机视频获取成功",
+        "data": {
+            "title": display_name,
+            "url": full_url,
+            "poster": cover_url
+        },
+        "meta": {
+            "total_videos": len(items),
+            "cache_used": cache_data is not None and is_halo_video_cache_valid(cache_data)
+        }
+    }
+
+@app.get("/api/video/list")
+async def get_video_list():
+    """
+    获取所有视频列表（带缓存）
+    
+    返回缓存中的所有视频附件信息
+    """
+    items = []
+    
+    # 检查缓存
+    cache_data = load_halo_video_cache()
+    if cache_data and is_halo_video_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用 Halo 视频缓存，缓存时间：{cache_data['timestamp']}")
+        items = cache_data.get("items", [])
+    
+    # 缓存无效或为空，从 API 获取
+    if not items:
+        try:
+            print(f"[{datetime.now()}] 缓存无效，从 Halo API 获取视频列表")
+            items = await fetch_halo_videos_from_api()
+            if items:
+                save_halo_video_cache(items)
+        except HTTPException as e:
+            if cache_data and cache_data.get("items"):
+                print(f"[{datetime.now()}] Halo API 失败，使用过期缓存")
+                items = cache_data.get("items", [])
+            else:
+                raise
+        except Exception as e:
+            if cache_data and cache_data.get("items"):
+                print(f"[{datetime.now()}] Halo API 失败，使用过期缓存")
+                items = cache_data.get("items", [])
+            else:
+                raise
+    
+    # 处理视频信息
+    videos = []
+    for video in items:
+        display_name = video.get('spec', {}).get('displayName', '未命名视频')
+        permalink = video.get('status', {}).get('permalink', '')
+
+        full_url = permalink
+        if permalink and permalink.startswith('/'):
+            full_url = f"{HALO_API_BASE}{permalink}"
+
+        cover_url = ""
+        if permalink:
+            cover_url = generate_video_cover_url(permalink)
+
+        videos.append({
+            "title": display_name,
+            "url": full_url,
+            "poster": cover_url
+        })
+
+    return {
+        "code": 200,
+        "message": "视频列表获取成功",
+        "data": videos,
+        "meta": {
+            "total": len(videos),
+            "cache_used": cache_data is not None and is_halo_video_cache_valid(cache_data)
+        }
+    }
+
+@app.get("/api/video/cache_info")
+async def get_halo_video_cache_info():
+    """
+    获取 Halo 视频缓存信息
+    """
+    cache_data = load_halo_video_cache()
+    cache_file = get_halo_video_cache_file()
+
+    if not cache_data:
+        return {
+            "code": 200,
+            "message": "缓存不存在",
+            "data": {
+                "exists": False,
+                "cache_file": str(cache_file)
+            }
+        }
+
+    cache_time = datetime.fromisoformat(cache_data["timestamp"])
+    is_valid = is_halo_video_cache_valid(cache_data)
+    items_count = len(cache_data.get("items", []))
+
+    return {
+        "code": 200,
+        "message": "缓存信息",
+        "data": {
+            "exists": True,
+            "cache_file": str(cache_file),
+            "cache_time": cache_data["timestamp"],
+            "is_valid": is_valid,
+            "items_count": items_count,
+            "expires_in": f"{HALO_VIDEO_CACHE_TTL_SECONDS - (datetime.now() - cache_time).total_seconds():.0f}秒" if is_valid else "已过期",
+            "file_size": cache_file.stat().st_size if cache_file.exists() else 0
+        }
+    }
+
+@app.delete("/api/video/cache")
+async def clear_halo_video_cache():
+    """
+    清除 Halo 视频缓存
+    """
+    cache_file = get_halo_video_cache_file()
+    if cache_file.exists():
+        try:
+            os.remove(cache_file)
+            return {
+                "code": 200,
+                "message": "缓存已清除",
+                "data": {
+                    "cache_file": str(cache_file),
+                    "cleared_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"清除缓存失败：{str(e)}")
+    else:
+        return {
+            "code": 200,
+            "message": "缓存文件不存在",
+            "data": {
+                "cache_file": str(cache_file)
+            }
+        }
