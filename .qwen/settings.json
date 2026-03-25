@@ -29,5 +29,6 @@
       "Bash(eof)",
       "Bash(mv *)"
     ]
-  }
+  },
+  "$version": 3
 }
