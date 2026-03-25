@@ -223,13 +223,13 @@ async function fetchPosts() {
 
   try {
     const response = await fetch(`${API_BASE_URL}/blog/posts?size=3`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     if (result.code !== 200) {
       throw new Error(result.message || '博客加载失败');
     }
@@ -237,7 +237,7 @@ async function fetchPosts() {
     // 后端已精简数据：{ items: [{ title, cover, excerpt, publishTime, permalink }] }
     const haloData = result.data;
     const items = haloData.items || [];
-    
+
     if (items.length === 0) {
       container.innerHTML = `
         <div class="blog-card">
@@ -252,14 +252,20 @@ async function fetchPosts() {
     const posts = items.map(item => {
       // 处理封面图
       let cover = item.cover || 'https://picsum.photos/400/200?random=1';
-      
+
       // 处理发布日期
       const publishTime = item.publishTime;
       const date = publishTime ? new Date(publishTime).toISOString().split('T')[0] : '未知日期';
-      
+
+      // 处理摘要：截断过长文本（最多 120 个字符）
+      let excerpt = item.excerpt || '暂无摘要';
+      if (excerpt.length > 120) {
+        excerpt = excerpt.substring(0, 120) + '...';
+      }
+
       return {
         title: item.title || '无标题',
-        excerpt: item.excerpt || '暂无摘要',
+        excerpt: excerpt,
         date: date,
         cover: cover,
         permalink: item.permalink || '#'
@@ -280,15 +286,15 @@ async function fetchPosts() {
         `,
       )
       .join('');
-    
+
     console.log('[Posts] 博客加载成功:', result.message);
   } catch (error) {
     console.error('[Posts] 获取博客失败:', error);
     // 错误时显示默认文章（降级处理）
     const fallbackPosts = [
       {
-        title: '暂无文章',
-        excerpt: '博客加载中，请稍后重试',
+        title: '博客加载中',
+        excerpt: '正在连接博客数据，请稍后刷新页面重试',
         date: new Date().toISOString().split('T')[0],
         cover: 'https://picsum.photos/400/200?random=1',
       },
