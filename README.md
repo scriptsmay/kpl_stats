@@ -1,20 +1,20 @@
-# KPL Stats - 无言粉丝应援站
+# KPL Stats - 无言粉丝应援站 + 选手数据展示
 
 KPL 选手生涯数据展示平台与粉丝应援站，为电竞选手"KSG.无言"打造的个人数据展示页面与粉丝家园。
 
 ## 项目预览
 
-### 数据平台
-
-数据平台展示无言的职业生涯数据，包括出场次数、击杀、MVP 等关键指标。
-
-![数据平台预览](doc/preview.png)
-
 ### 粉丝应援站
 
 粉丝应援站包含关于无言的详细信息、生涯高光时刻、国服英雄池等内容。
 
-> **提示**: 如需添加粉丝应援站截图，请将截图保存至 `doc/fan-site-preview.png`，然后更新上方图片链接。
+![站点预览](doc/snapshot.png)
+
+### 选手个人职业数据平台
+
+数据平台展示无言的职业生涯数据，包括出场次数、击杀、MVP 等关键指标。
+
+更多数据可视化正在开发中...
 
 ## 技术栈
 
@@ -157,12 +157,12 @@ cp config.example.js config.js
 
 ### 访问应用
 
-| 应用 | 地址 | 说明 |
-|------|------|------|
-| **数据平台** | http://localhost:3000 | Vue 前端 |
-| **粉丝应援站** | http://localhost:3000 (homepage) | 静态页面 |
-| **后端 API 文档** | http://localhost:8001/docs | FastAPI Swagger |
-| **数据管理** | http://localhost:3000/admin | 管理面板 |
+| 应用              | 地址                             | 说明            |
+| ----------------- | -------------------------------- | --------------- |
+| **数据平台**      | http://localhost:3000            | Vue 前端        |
+| **粉丝应援站**    | http://localhost:3000 (homepage) | 静态页面        |
+| **后端 API 文档** | http://localhost:8001/docs       | FastAPI Swagger |
+| **数据管理**      | http://localhost:3000/admin      | 管理面板        |
 
 ## API 接口
 
@@ -421,11 +421,11 @@ npm run build
 
 ## 文档
 
-| 文档 | 说明 |
-|------|------|
-| [`doc/halo-api-proxy.md`](doc/halo-api-proxy.md) | Halo API 代理配置指南 |
-| [`doc/homepage-config.md`](doc/homepage-config.md) | 粉丝应援站配置指南 |
-| [`.github/SECRETS.md`](.github/SECRETS.md) | GitHub Secrets 配置说明 |
+| 文档                                               | 说明                    |
+| -------------------------------------------------- | ----------------------- |
+| [`doc/halo-api-proxy.md`](doc/halo-api-proxy.md)   | Halo API 代理配置指南   |
+| [`doc/homepage-config.md`](doc/homepage-config.md) | 粉丝应援站配置指南      |
+| [`.github/SECRETS.md`](.github/SECRETS.md)         | GitHub Secrets 配置说明 |
 
 ## 常见问题
 
