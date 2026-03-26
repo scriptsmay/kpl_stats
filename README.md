@@ -94,7 +94,7 @@ kpl_stats/
 │       └── deploy.yml       # GitHub Actions 部署脚本
 ├── test/                    # 测试数据
 ├── README.md
-└── docker-compose.backend.yml  # Docker Compose 配置
+└── docker-compose.yml       # Docker Compose 配置
 ```
 
 ## 快速开始

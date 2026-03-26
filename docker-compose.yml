@@ -1,5 +1,5 @@
 # KPL Stats 后端服务
-# 使用方式：docker-compose -f docker-compose.backend.yml up -d
+# 使用方式：docker-compose up -d
 
 services:
   kpl-stats-backend:

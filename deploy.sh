@@ -42,23 +42,23 @@ ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "mkdir -p $DEPLOY_PATH $FRONTEND_T
 scp -P $SERVER_PORT -r frontend/dist/* $SERVER_USER@$SERVER_HOST:$FRONTEND_TARGET
 scp -P $SERVER_PORT -r homepage/dist/* $SERVER_USER@$SERVER_HOST:$FRONTEND_TARGET/
 scp -P $SERVER_PORT -r backend $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
-scp -P $SERVER_PORT docker-compose.backend.yml $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
+scp -P $SERVER_PORT docker-compose.yml $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 
 # 4. 部署后端
 echo -e "${YELLOW}[4/5] 部署后端服务...${NC}"
 ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'ENDSSH'
   cd /root/kpl_stats
-  
+
   # 复制环境变量（如果不存在）
   if [ ! -f backend/.env ]; then
     cp backend/.env.example backend/.env
     echo "请编辑 backend/.env 配置环境变量"
   fi
-  
+
   # 构建并启动容器
-  docker compose -f docker-compose.backend.yml down
-  docker compose -f docker-compose.backend.yml build
-  docker compose -f docker-compose.backend.yml up -d
+  docker compose -f docker-compose.yml down
+  docker compose -f docker-compose.yml build
+  docker compose -f docker-compose.yml up -d
 ENDSSH
 
 # 5. 配置 OpenResty（首次部署需要）
