@@ -14,6 +14,13 @@ services:
       - THIRD_PARTY_API_URL=${THIRD_PARTY_API_URL}
       - API_KEY=${API_KEY:-}
       - CACHE_TTL_HOURS=${CACHE_TTL_HOURS:-24}
+      # Halo 博客 API 配置
+      - HALO_API_BASE=${HALO_API_BASE:-https://blog.kplwuyan.site}
+      - HALO_API_TOKEN=${HALO_API_TOKEN}
+      - HALO_POSTS_CACHE_TTL_HOURS=${HALO_POSTS_CACHE_TTL_HOURS:-1}
+      # Halo 视频 API 配置
+      - HALO_VIDEO_GROUP_ID=${HALO_VIDEO_GROUP_ID:-attachment-group-25ptmssm}
+      - HALO_VIDEO_CACHE_TTL_SECONDS=${HALO_VIDEO_CACHE_TTL_SECONDS:-600}
     volumes:
       # 持久化缓存文件
       - ./backend/data:/app/data
