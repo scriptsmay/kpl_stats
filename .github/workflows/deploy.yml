@@ -91,9 +91,9 @@ jobs:
 
             # 4. 构建并启动容器
             echo "启动后端服务..."
-            docker compose -f docker-compose.backend.yml down
-            docker compose -f docker-compose.backend.yml build
-            docker compose -f docker-compose.backend.yml up -d
+            docker compose down
+            docker compose build
+            docker compose up -d
 
             # 5. 清理悬空镜像
             docker image prune -f
