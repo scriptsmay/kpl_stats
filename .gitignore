@@ -57,6 +57,7 @@ homepage/node_modules/
 
 # Qwen Code
 .qwen/
+QWEN.md
 
 # 测试文件（如包含敏感数据）
 test/*.json

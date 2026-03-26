@@ -9,9 +9,7 @@ services:
     container_name: kpl-stats-backend
     restart: unless-stopped
     ports:
-      - "8001:8000"
-    env_file:
-      - ./.env
+      - '8001:8000'
     environment:
       - THIRD_PARTY_API_URL=${THIRD_PARTY_API_URL}
       - API_KEY=${API_KEY:-}
@@ -21,7 +19,7 @@ services:
       - ./backend/data:/app/data
     networks:
       - kpl-network
-    # 资源限制（2G 内存服务器优化）
+    # 资源限制
     deploy:
       resources:
         limits:
