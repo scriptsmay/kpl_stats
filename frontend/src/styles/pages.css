@@ -188,3 +188,170 @@
     font-size: var(--font-size-xl);
   }
 }
+
+/* ========================================
+   比赛高光记录页面 (MatchRecords.vue)
+   ======================================== */
+
+/* 记录列表 */
+.match-records-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* 记录卡片 - 文章列表形式 */
+.match-record-card {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  align-items: flex-start;
+  border: 2px solid transparent;
+}
+
+.match-record-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 高亮记录卡片 - 金色边框 */
+.match-record-card.is-highlight {
+  border-color: #ffd700;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.match-record-card.is-highlight:hover {
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5);
+}
+
+/* 左侧图片 */
+.match-record-cover {
+  flex-shrink: 0;
+  width: 360px;
+  /* height: 120px; */
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  background: var(--gray-100);
+  position: relative;
+}
+
+.match-record-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.match-record-card:hover .match-record-cover img {
+  transform: scale(1.05);
+}
+
+/* 无图片时的占位 */
+.match-record-cover .placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gray-200) 0%, var(--gray-300) 100%);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-2xl);
+}
+
+/* 右侧内容 */
+.match-record-content {
+  flex: 1;
+  min-width: 0; /* 防止内容溢出 */
+}
+
+.match-record-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+.match-record-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.match-record-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.match-record-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.match-record-tournament {
+  border: 1px solid var(--primary-medium);
+  color: var(--primary-medium);
+  padding: 2px 10px;
+  border-radius: var(--border-radius-full);
+  font-weight: var(--font-weight-medium);
+  background: transparent;
+}
+
+.match-record-description {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--spacing-md);
+  white-space: pre-wrap; /* 保留换行 */
+}
+
+/* 标签 */
+.match-record-tags {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.match-record-tag {
+  border: 1px solid var(--gray-300);
+  color: var(--text-secondary);
+  padding: 4px 12px;
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: transparent;
+  transition: all var(--transition-base);
+}
+
+.match-record-tag.tag-active {
+  border-color: var(--primary-medium);
+  color: var(--primary-medium);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .match-records-page {
+    padding: var(--spacing-md);
+  }
+
+  .match-record-card {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .match-record-cover {
+    width: 100%;
+    height: 180px;
+  }
+}

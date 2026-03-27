@@ -55,5 +55,15 @@ export const getSeasonsList = (project = 'KPL') =>
   });
 
 // 获取赛季名称映射
-export const getSeasonNameMap = () => 
+export const getSeasonNameMap = () =>
   api.get('/seasons/name_map');
+
+// 获取比赛高光记录
+export const getMatchRecords = (season = 'all') =>
+  api.get('/match/records', {
+    params: { season }
+  });
+
+// 获取选手参赛的所有赛季列表
+export const getPlayerSeasons = () =>
+  api.get('/player/seasons');

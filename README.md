@@ -121,8 +121,11 @@ pip install -r requirements.txt
 cp .env.example .env  # 或编辑 .env 文件
 # 设置 THIRD_PARTY_API_URL、HALO_API_BASE、HALO_API_TOKEN 等
 
-# 启动服务
-uvicorn main:app --reload --port 8001
+# 启动开发服务器（推荐）
+./dev.sh
+
+# 或直接使用 uvicorn
+uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
 ### 前端启动（数据平台）
@@ -461,7 +464,8 @@ npm run build
 ```bash
 # 后端
 cd backend
-uvicorn main:app --reload --port 8001
+./dev.sh                    # 启动开发服务器（推荐）
+uvicorn main:app --reload   # 或直接使用 uvicorn
 
 # 前端（数据平台）
 cd frontend
