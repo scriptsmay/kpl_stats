@@ -220,8 +220,8 @@
 /* 左侧图片 */
 .match-record-cover {
   flex-shrink: 0;
-  width: 200px;
-  height: 120px;
+  width: 360px;
+  /* height: 120px; */
   border-radius: var(--border-radius-md);
   overflow: hidden;
   background: var(--gray-100);

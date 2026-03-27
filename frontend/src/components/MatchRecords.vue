@@ -82,7 +82,7 @@ const loadRecords = async () => {
       isHighlight: isHighlightRecord(item.content),
       description: formatContent(item.content),
       cover: extractImageFromContent(item.content),
-      rawContent: item.content
+      rawContent: item.content,
     }));
 
     console.log('高光记录加载成功', records.value);
@@ -100,7 +100,7 @@ const formatContent = (content) => {
   // 移除图片链接
   const withoutImages = content.replace(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)\S*/gi, '');
   // 将 [星星] 替换为 ⭐
-  const withStars = withoutImages.replace(/\[星星\]/g, '⭐');
+  const withStars = withoutImages.replace(/\[星星\]/g, '⭐ ');
   // 压缩多余空格（保留换行）
   return withStars.replace(/[ \t]+/g, ' ').trim();
 };
@@ -110,7 +110,7 @@ const isHighlightRecord = (content) => {
   if (!content) return false;
   // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 关羽"
   // 使用 .*? 非贪婪匹配任意字符（包括 @、_、括号等）
-  return /MVP 为.*?无言/i.test(content);
+  return /MVP为.*?无言/i.test(content);
 };
 
 // 从 content 中提取图片 URL 作为封面
