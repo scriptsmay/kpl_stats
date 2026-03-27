@@ -99,15 +99,18 @@ const formatContent = (content) => {
   if (!content) return '';
   // 移除图片链接
   const withoutImages = content.replace(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)\S*/gi, '');
+  // 将 [星星] 替换为 ⭐
+  const withStars = withoutImages.replace(/\[星星\]/g, '⭐');
   // 压缩多余空格（保留换行）
-  return withoutImages.replace(/[ \t]+/g, ' ').trim();
+  return withStars.replace(/[ \t]+/g, ' ').trim();
 };
 
 // 判断是否为高光记录（content 中含有 "MVP 为 xxx 无言" 或 "MVP 为@无言" 等）
 const isHighlightRecord = (content) => {
   if (!content) return false;
-  // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 吕布"
-  return /MVP 为 [^无言]*无言/i.test(content);
+  // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 关羽"
+  // 使用 .*? 非贪婪匹配任意字符（包括 @、_、括号等）
+  return /MVP 为.*?无言/i.test(content);
 };
 
 // 从 content 中提取图片 URL 作为封面
