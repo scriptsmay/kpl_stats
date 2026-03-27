@@ -43,25 +43,24 @@
   min-width: 0; /* 防止内容溢出 */
 }
 .player-card-container {
+  width: 300px;
+  flex-shrink: 0;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--spacing-xxl);
   margin-bottom: var(--spacing-xxxl);
-  display: grid;
-}
-
-.player-card-container.single {
-  grid-template-columns: 1fr;
 }
 
 /* 选手卡片 */
 .player-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
   color: var(--white);
   text-align: center;
   background: var(--primary-gradient);
   border-radius: var(--border-radius-xl);
   padding: var(--spacing-xl);
-  max-width: 400px;
   margin: 0 auto;
 }
 
