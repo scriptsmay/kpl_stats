@@ -279,11 +279,12 @@
 }
 
 .match-record-tournament {
-  background: var(--primary-light);
+  border: 1px solid var(--primary-medium);
   color: var(--primary-medium);
   padding: 2px 10px;
   border-radius: var(--border-radius-full);
   font-weight: var(--font-weight-medium);
+  background: transparent;
 }
 
 .match-record-description {
@@ -302,13 +303,20 @@
 }
 
 .match-record-tag {
-  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
   color: var(--text-secondary);
   padding: 4px 12px;
   border-radius: var(--border-radius-full);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  border: 1px solid var(--gray-200);
+  background: transparent;
+  transition: all var(--transition-base);
+}
+
+.match-record-tag.tag-active {
+  border-color: var(--primary-medium);
+  color: var(--primary-medium);
+  font-weight: var(--font-weight-bold);
 }
 
 /* 响应式 */
