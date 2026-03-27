@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # KPL Stats Backend Development Server
-# 使用方法：./dev.sh 或 npm run dev (如果配置了)
+# 使用方法：./dev.sh
 
 echo "🚀 启动 KPL Stats 后端开发服务器..."
 
@@ -17,9 +17,9 @@ if [ ! -f ".env" ] && [ -f ".env.example" ]; then
     cp .env.example .env
 fi
 
-# 启动开发服务器
+# 使用 python -m uvicorn 确保使用当前环境的 Python
 echo "🌐 服务器地址：http://localhost:8001"
 echo "📖 API 文档：http://localhost:8001/docs"
 echo ""
 
-uvicorn main:app --reload --host 0.0.0.0 --port 8001
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001

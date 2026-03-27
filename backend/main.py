@@ -37,6 +37,10 @@ HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  
 HALO_VIDEO_GROUP_ID = os.getenv("HALO_VIDEO_GROUP_ID", "attachment-group-25ptmssm")
 HALO_VIDEO_CACHE_TTL_SECONDS = int(os.getenv("HALO_VIDEO_CACHE_TTL_SECONDS", "600"))  # 默认缓存 10 分钟
 
+# 高光记录 API 配置
+RECORDS_API_URL = os.getenv("RECORDS_API_URL", "http://47.102.210.150:5022/api/records")
+RECORDS_CACHE_TTL_HOURS = int(os.getenv("RECORDS_CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小时（每天 0 点更新）
+
 # 确保 data 目录存在
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -48,6 +52,13 @@ season_name_cache = {
     "data": None,
     "timestamp": None,
     "ttl_seconds": 86400  # 24 小时缓存
+}
+
+# 高光记录缓存（内存缓存）
+match_records_cache = {
+    "data": None,
+    "timestamp": None,
+    "ttl_hours": RECORDS_CACHE_TTL_HOURS
 }
 
 def get_cache_file(season_type: str = 'all') -> Path:
@@ -334,6 +345,75 @@ def is_season_cache_valid():
     cache_time = datetime.fromisoformat(season_name_cache["timestamp"])
     return (datetime.now() - cache_time).total_seconds() < season_name_cache["ttl_seconds"]
 
+# ============= 高光记录缓存函数 =============
+
+def get_match_records_cache_file() -> Path:
+    """获取高光记录缓存文件路径"""
+    return DATA_DIR / "cache.match_records.json"
+
+def save_match_records_cache(data: list):
+    """保存高光记录到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "data": data
+    }
+    cache_file = get_match_records_cache_file()
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] 高光记录缓存已保存，共 {len(data)} 条")
+
+def load_match_records_cache():
+    """从本地文件加载高光记录缓存"""
+    cache_file = get_match_records_cache_file()
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取高光记录缓存失败：{e}")
+            return None
+    return None
+
+def is_match_records_cache_valid(cache_data: dict) -> bool:
+    """检查高光记录缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return datetime.now() - cache_time < timedelta(hours=RECORDS_CACHE_TTL_HOURS)
+    except (KeyError, ValueError):
+        return False
+
+async def fetch_match_records_from_api(season_id: str):
+    """从第三方 API 获取指定赛季的高光记录"""
+    try:
+        async with httpx.AsyncClient() as client:
+            params = {"season": season_id}
+            print(f"[{datetime.now()}] 开始请求高光记录 API: {RECORDS_API_URL}, params: {params}")
+            response = await client.get(
+                RECORDS_API_URL,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            all_records = response.json()
+            
+            # 筛选出含有"无言"的记录
+            wuyan_records = [
+                record for record in all_records 
+                if "无言" in record.get("content", "")
+            ]
+            
+            print(f"[{datetime.now()}] 高光记录 API 请求成功，共 {len(all_records)} 条，筛选出无言相关 {len(wuyan_records)} 条")
+            return wuyan_records
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="高光记录 API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"高光记录 API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取高光记录失败：{str(e)}")
+
 async def fetch_seasons_from_api(project: str = 'KPL'):
     """从第三方 API 获取赛季列表"""
     try:
@@ -407,6 +487,33 @@ async def fetch_from_third_party(season_type: str = 'all'):
         raise HTTPException(status_code=e.response.status_code, detail=f"第三方 API 错误：{e.response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取数据失败：{str(e)}")
+
+def get_player_seasons_from_cache() -> list:
+    """从缓存的生涯数据中提取选手参加的所有赛季 ID"""
+    # 尝试从全部赛季缓存中获取
+    cache_data = load_from_cache('all')
+    if not cache_data or not cache_data.get('data'):
+        return []
+    
+    data = cache_data['data']
+    seasons = []
+    
+    # 从赛季数据中提取
+    season_stats = data.get('season_stats', [])
+    for season in season_stats:
+        season_id = season.get('season_id')
+        if season_id and season_id not in seasons:
+            seasons.append(season_id)
+    
+    # 从比赛详情中提取（作为补充）
+    match_details = data.get('match_details', [])
+    for match in match_details:
+        season_id = match.get('season_id')
+        if season_id and season_id not in seasons:
+            seasons.append(season_id)
+    
+    print(f"从缓存中提取到 {len(seasons)} 个赛季：{seasons}")
+    return seasons
 
 # ============= API 接口 =============
 
@@ -1089,6 +1196,175 @@ async def clear_halo_video_cache():
     清除 Halo 视频缓存
     """
     cache_file = get_halo_video_cache_file()
+    if cache_file.exists():
+        try:
+            os.remove(cache_file)
+            return {
+                "code": 200,
+                "message": "缓存已清除",
+                "data": {
+                    "cache_file": str(cache_file),
+                    "cleared_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"清除缓存失败：{str(e)}")
+    else:
+        return {
+            "code": 200,
+            "message": "缓存文件不存在",
+            "data": {
+                "cache_file": str(cache_file)
+            }
+        }
+
+# ============= 高光记录 API 接口 =============
+
+@app.get("/api/match/records")
+async def get_match_records(
+    force_refresh: bool = Query(False, description="是否强制刷新缓存")
+):
+    """
+    获取无言的比赛高光记录
+
+    参数：
+    - force_refresh: 设置为 true 时强制从第三方 API 获取最新数据
+
+    功能：
+    1. 从生涯数据缓存中提取选手参加的所有赛季 ID
+    2. 遍历每个赛季，从第三方 API 获取高光记录
+    3. 筛选出含有"无言"的记录
+    4. 合并所有赛季的记录并返回
+    """
+    # 如果强制刷新，重新获取所有数据
+    if force_refresh:
+        try:
+            all_records = await fetch_all_season_records()
+            save_match_records_cache(all_records)
+            return {
+                "code": 200,
+                "message": "数据已强制刷新",
+                "data": all_records,
+                "from_cache": False,
+                "refresh_time": datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
+
+    # 非强制刷新，尝试使用缓存
+    cache_data = load_match_records_cache()
+
+    # 检查缓存是否有效
+    if cache_data and is_match_records_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用高光记录缓存，缓存时间：{cache_data['timestamp']}")
+        return {
+            "code": 200,
+            "message": "数据来自缓存",
+            "data": cache_data["data"],
+            "from_cache": True,
+            "cache_time": cache_data["timestamp"]
+        }
+
+    # 缓存无效，重新获取
+    try:
+        print(f"[{datetime.now()}] 缓存无效，从第三方 API 获取高光记录")
+        all_records = await fetch_all_season_records()
+        save_match_records_cache(all_records)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": all_records,
+            "from_cache": False,
+            "refresh_time": datetime.now().isoformat()
+        }
+    except HTTPException:
+        # API 失败时，如果有缓存则返回过期缓存
+        if cache_data:
+            print(f"[{datetime.now()}] API 失败，返回过期缓存")
+            return {
+                "code": 200,
+                "message": "数据来自过期缓存（第三方 API 暂时不可用）",
+                "data": cache_data["data"],
+                "from_cache": True,
+                "cache_time": cache_data["timestamp"],
+                "is_expired": True
+            }
+        raise
+
+async def fetch_all_season_records() -> list:
+    """获取所有赛季的高光记录并合并"""
+    # 从缓存中提取选手参加的赛季
+    seasons = get_player_seasons_from_cache()
+    
+    if not seasons:
+        print("警告：未能从缓存中提取到赛季信息，使用默认赛季")
+        seasons = ["KPL2026S1", "KCC2025"]  # 降级处理
+    
+    all_records = []
+    
+    # 遍历每个赛季获取记录
+    for season_id in seasons:
+        try:
+            print(f"[{datetime.now()}] 开始获取赛季 {season_id} 的高光记录")
+            records = await fetch_match_records_from_api(season_id)
+            all_records.extend(records)
+        except HTTPException as e:
+            print(f"获取赛季 {season_id} 的高光记录失败：{e.detail}")
+            continue
+        except Exception as e:
+            print(f"获取赛季 {season_id} 的高光记录异常：{e}")
+            continue
+    
+    # 按日期降序排序
+    all_records.sort(key=lambda x: x.get("date", ""), reverse=True)
+    
+    print(f"[{datetime.now()}] 所有赛季高光记录获取完成，共 {len(all_records)} 条")
+    return all_records
+
+@app.get("/api/match/records/cache_info")
+async def get_match_records_cache_info():
+    """
+    获取高光记录缓存信息
+    """
+    cache_data = load_match_records_cache()
+    cache_file = get_match_records_cache_file()
+
+    if not cache_data:
+        return {
+            "code": 200,
+            "message": "缓存不存在",
+            "data": {
+                "exists": False,
+                "cache_file": str(cache_file)
+            }
+        }
+
+    cache_time = datetime.fromisoformat(cache_data["timestamp"])
+    is_valid = is_match_records_cache_valid(cache_data)
+    items_count = len(cache_data.get("data", []))
+
+    return {
+        "code": 200,
+        "message": "缓存信息",
+        "data": {
+            "exists": True,
+            "cache_file": str(cache_file),
+            "cache_time": cache_data["timestamp"],
+            "is_valid": is_valid,
+            "items_count": items_count,
+            "expires_in": f"{RECORDS_CACHE_TTL_HOURS - (datetime.now() - cache_time).total_seconds() / 3600:.1f}小时" if is_valid else "已过期",
+            "file_size": cache_file.stat().st_size if cache_file.exists() else 0
+        }
+    }
+
+@app.delete("/api/match/records/cache")
+async def clear_match_records_cache():
+    """
+    清除高光记录缓存
+    """
+    cache_file = get_match_records_cache_file()
     if cache_file.exists():
         try:
             os.remove(cache_file)
