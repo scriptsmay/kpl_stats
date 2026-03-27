@@ -7,11 +7,7 @@
 
     <!-- 赛季筛选 -->
     <div class="season-filter-container" v-if="seasons.length > 0">
-      <button
-        class="season-filter-btn"
-        :class="{ active: selectedSeason === 'all' }"
-        @click="filterSeason('all')"
-      >
+      <button class="season-filter-btn" :class="{ active: selectedSeason === 'all' }" @click="filterSeason('all')">
         📊 全部赛季
       </button>
       <button
@@ -39,7 +35,12 @@
 
     <!-- 数据列表 -->
     <div class="match-records-list" v-else-if="records.length > 0">
-      <div class="match-record-card" v-for="record in records" :key="record.id">
+      <div
+        class="match-record-card"
+        :class="{ 'is-highlight': record.isHighlight }"
+        v-for="record in records"
+        :key="record.id"
+      >
         <!-- 左侧封面图 -->
         <div class="match-record-cover">
           <img v-if="record.cover" :src="record.cover" :alt="record.title" @error="handleCoverError" />
@@ -48,7 +49,15 @@
 
         <!-- 右侧内容 -->
         <div class="match-record-content">
-          <h3 class="match-record-title">{{ record.title }}</h3>
+          <div class="match-record-header">
+            <h3 class="match-record-title">{{ record.title }}</h3>
+            <div class="match-record-tags">
+              <span class="match-record-tag">第{{ record.gameNumber }}局</span>
+              <span class="match-record-tag" :class="{ 'tag-active': record.isHighlight }">
+                {{ record.isHighlight ? '⭐ MVP' : '📝 记录' }}
+              </span>
+            </div>
+          </div>
 
           <div class="match-record-meta">
             <span class="match-record-date">📅 {{ record.date }}</span>
@@ -56,13 +65,6 @@
           </div>
 
           <p class="match-record-description">{{ record.description }}</p>
-
-          <div class="match-record-tags">
-            <span class="match-record-tag">第{{ record.gameNumber }}局</span>
-            <span class="match-record-tag" :class="{ 'tag-active': record.isHighlight }">
-              {{ record.isHighlight ? '⭐ MVP' : '📝 记录' }}
-            </span>
-          </div>
         </div>
       </div>
     </div>
@@ -97,7 +99,7 @@ const loadSeasons = async () => {
     // 使用默认赛季
     seasons.value = [
       { season_id: 'KPL2026S1', season_name: '2026 年春季赛' },
-      { season_id: 'KCC2025', season_name: '2025 挑战者杯' }
+      { season_id: 'KCC2025', season_name: '2025 挑战者杯' },
     ];
   }
 };
@@ -144,8 +146,8 @@ const formatContent = (content) => {
   if (!content) return '';
   // 移除图片链接
   const withoutImages = content.replace(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)\S*/gi, '');
-  // 将 [星星] 替换为 ⭐
-  const withStars = withoutImages.replace(/\[星星\]/g, '⭐');
+  // 将 [星星] 替换为 ⭐ + 空格
+  const withStars = withoutImages.replace(/\[星星\]/g, '⭐ ');
   // 压缩多余空格（保留换行）
   return withStars.replace(/[ \t]+/g, ' ').trim();
 };
@@ -155,7 +157,7 @@ const isHighlightRecord = (content) => {
   if (!content) return false;
   // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 关羽"
   // 使用 .*? 非贪婪匹配任意字符（包括 @、_、括号等）
-  return /MVP 为.*?无言/i.test(content);
+  return /MVP为.*?无言/i.test(content);
 };
 
 // 从 content 中提取图片 URL 作为封面

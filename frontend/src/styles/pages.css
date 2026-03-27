@@ -210,11 +210,22 @@
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
   align-items: flex-start;
+  border: 2px solid transparent;
 }
 
 .match-record-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+}
+
+/* 高亮记录卡片 - 金色边框 */
+.match-record-card.is-highlight {
+  border-color: #ffd700;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.match-record-card.is-highlight:hover {
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5);
 }
 
 /* 左侧图片 */
@@ -257,11 +268,19 @@
   min-width: 0; /* 防止内容溢出 */
 }
 
+.match-record-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
 .match-record-title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  margin: 0;
 }
 
 .match-record-meta {
@@ -300,6 +319,7 @@
   display: flex;
   gap: var(--spacing-xs);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .match-record-tag {

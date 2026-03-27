@@ -14,7 +14,11 @@
     <main class="main-content">
       <router-view />
     </main>
+
+    <BackToTop />
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import BackToTop from './components/BackToTop.vue';
+</script>
