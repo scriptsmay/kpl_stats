@@ -1,8 +1,8 @@
 <template>
-  <div class="match-records-page">
-    <div class="match-records-header">
-      <h1 class="match-records-title">🎬 比赛高光记录</h1>
-      <p class="match-records-subtitle">无言职业生涯精彩瞬间</p>
+  <div class="result-section match-records-page">
+    <div class="result-header match-records-header">
+      <h1 class="result-title">📷 比赛高光记录</h1>
+      <p class="result-subtitle">无言职业生涯精彩瞬间</p>
     </div>
 
     <!-- 加载状态 -->
@@ -29,7 +29,7 @@
         <!-- 右侧内容 -->
         <div class="match-record-content">
           <h3 class="match-record-title">{{ record.title }}</h3>
-          
+
           <div class="match-record-meta">
             <span class="match-record-date">📅 {{ record.date }}</span>
             <span class="match-record-tournament">{{ record.tournament }}</span>
@@ -71,7 +71,7 @@ const loadRecords = async () => {
   try {
     const res = await getMatchRecords();
     const apiRecords = res.data.data || [];
-    
+
     // 转换为前端需要的格式
     records.value = apiRecords.map((item, index) => ({
       id: item.record_id || index,
@@ -82,9 +82,9 @@ const loadRecords = async () => {
       active: item.active,
       description: formatContent(item.content),
       cover: extractImageFromContent(item.content),
-      rawContent: item.content
+      rawContent: item.content,
     }));
-    
+
     console.log('高光记录加载成功', records.value);
   } catch (err) {
     console.error('加载失败', err);

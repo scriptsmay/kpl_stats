@@ -193,30 +193,6 @@
    比赛高光记录页面 (MatchRecords.vue)
    ======================================== */
 
-.match-records-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: var(--spacing-xl);
-}
-
-/* 页面头部 */
-.match-records-header {
-  text-align: center;
-  margin-bottom: var(--spacing-xxl);
-}
-
-.match-records-title {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.match-records-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--text-secondary);
-}
-
 /* 记录列表 */
 .match-records-list {
   display: flex;

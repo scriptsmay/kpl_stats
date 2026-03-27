@@ -1,5 +1,7 @@
 /* 布局样式 */
-
+.hide {
+  display: none;
+}
 /* 应用包装器 */
 .app-wrapper {
   background: var(--bg-gradient);
@@ -94,6 +96,10 @@
   color: var(--gray-700);
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-bold);
+}
+.result-subtitle {
+  color: var(--gray-500);
+  font-size: var(--font-size-md);
 }
 
 /* 响应式 */
