@@ -347,31 +347,34 @@ def is_season_cache_valid():
 
 # ============= 高光记录缓存函数 =============
 
-def get_match_records_cache_file() -> Path:
+def get_match_records_cache_file(season: str = 'all') -> Path:
     """获取高光记录缓存文件路径"""
-    return DATA_DIR / "cache.match_records.json"
+    if season == 'all':
+        return DATA_DIR / "cache.match_records.json"
+    return DATA_DIR / f"cache.match_records.{season}.json"
 
-def save_match_records_cache(data: list):
+def save_match_records_cache(data: list, season: str = 'all'):
     """保存高光记录到缓存"""
     now = datetime.now()
     cache_data = {
         "timestamp": now.isoformat(),
+        "season": season,
         "data": data
     }
-    cache_file = get_match_records_cache_file()
+    cache_file = get_match_records_cache_file(season)
     with open(cache_file, 'w', encoding='utf-8') as f:
         json.dump(cache_data, f, ensure_ascii=False, indent=2)
-    print(f"[{now}] 高光记录缓存已保存，共 {len(data)} 条")
+    print(f"[{now}] 高光记录缓存已保存 [{season}]，共 {len(data)} 条")
 
-def load_match_records_cache():
+def load_match_records_cache(season: str = 'all'):
     """从本地文件加载高光记录缓存"""
-    cache_file = get_match_records_cache_file()
+    cache_file = get_match_records_cache_file(season)
     if cache_file.exists():
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            print(f"读取高光记录缓存失败：{e}")
+            print(f"读取高光记录缓存失败 [{season}]：{e}")
             return None
     return None
 
@@ -405,7 +408,7 @@ async def fetch_match_records_from_api(season_id: str):
                 if "无言" in record.get("content", "")
             ]
             
-            print(f"[{datetime.now()}] 高光记录 API 请求成功，共 {len(all_records)} 条，筛选出无言相关 {len(wuyan_records)} 条")
+            print(f"[{datetime.now()}] 高光记录 API 请求成功 [{season_id}]，共 {len(all_records)} 条，筛选出无言相关 {len(wuyan_records)} 条")
             return wuyan_records
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="高光记录 API 请求超时")
@@ -1278,18 +1281,12 @@ async def get_match_records(
     参数：
     - season: 赛季 ID，all 表示所有赛季
     - force_refresh: 设置为 true 时强制从第三方 API 获取最新数据
-
-    功能：
-    1. 从生涯数据缓存中提取选手参加的所有赛季 ID
-    2. 遍历指定赛季（或所有赛季），从第三方 API 获取高光记录
-    3. 筛选出含有"无言"的记录
-    4. 合并记录并返回
     """
     # 如果强制刷新，重新获取所有数据
     if force_refresh:
         try:
             all_records = await fetch_season_records(season)
-            save_match_records_cache(all_records)
+            save_match_records_cache(all_records, season)
             return {
                 "code": 200,
                 "message": "数据已强制刷新",
@@ -1304,11 +1301,11 @@ async def get_match_records(
             raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
 
     # 非强制刷新，尝试使用缓存
-    cache_data = load_match_records_cache()
+    cache_data = load_match_records_cache(season)
 
     # 检查缓存是否有效
     if cache_data and is_match_records_cache_valid(cache_data):
-        print(f"[{datetime.now()}] 使用高光记录缓存，缓存时间：{cache_data['timestamp']}")
+        print(f"[{datetime.now()}] 使用高光记录缓存 [{season}]，缓存时间：{cache_data['timestamp']}")
         return {
             "code": 200,
             "message": "数据来自缓存",
@@ -1320,9 +1317,9 @@ async def get_match_records(
 
     # 缓存无效，重新获取
     try:
-        print(f"[{datetime.now()}] 缓存无效，从第三方 API 获取高光记录")
+        print(f"[{datetime.now()}] 缓存无效，从第三方 API 获取高光记录 [{season}]")
         all_records = await fetch_season_records(season)
-        save_match_records_cache(all_records)
+        save_match_records_cache(all_records, season)
         return {
             "code": 200,
             "message": "数据已更新",
@@ -1334,7 +1331,7 @@ async def get_match_records(
     except HTTPException:
         # API 失败时，如果有缓存则返回过期缓存
         if cache_data:
-            print(f"[{datetime.now()}] API 失败，返回过期缓存")
+            print(f"[{datetime.now()}] API 失败，返回过期缓存 [{season}]")
             return {
                 "code": 200,
                 "message": "数据来自过期缓存（第三方 API 暂时不可用）",
@@ -1390,12 +1387,14 @@ async def fetch_all_season_records() -> list:
     return await fetch_season_records('all')
 
 @app.get("/api/match/records/cache_info")
-async def get_match_records_cache_info():
+async def get_match_records_cache_info(
+    season: str = Query('all', description="赛季 ID")
+):
     """
     获取高光记录缓存信息
     """
-    cache_data = load_match_records_cache()
-    cache_file = get_match_records_cache_file()
+    cache_data = load_match_records_cache(season)
+    cache_file = get_match_records_cache_file(season)
 
     if not cache_data:
         return {
@@ -1403,6 +1402,7 @@ async def get_match_records_cache_info():
             "message": "缓存不存在",
             "data": {
                 "exists": False,
+                "season": season,
                 "cache_file": str(cache_file)
             }
         }
@@ -1416,6 +1416,7 @@ async def get_match_records_cache_info():
         "message": "缓存信息",
         "data": {
             "exists": True,
+            "season": season,
             "cache_file": str(cache_file),
             "cache_time": cache_data["timestamp"],
             "is_valid": is_valid,
@@ -1426,11 +1427,13 @@ async def get_match_records_cache_info():
     }
 
 @app.delete("/api/match/records/cache")
-async def clear_match_records_cache():
+async def clear_match_records_cache(
+    season: str = Query('all', description="赛季 ID")
+):
     """
     清除高光记录缓存
     """
-    cache_file = get_match_records_cache_file()
+    cache_file = get_match_records_cache_file(season)
     if cache_file.exists():
         try:
             os.remove(cache_file)
@@ -1438,6 +1441,7 @@ async def clear_match_records_cache():
                 "code": 200,
                 "message": "缓存已清除",
                 "data": {
+                    "season": season,
                     "cache_file": str(cache_file),
                     "cleared_at": datetime.now().isoformat()
                 }
@@ -1449,6 +1453,7 @@ async def clear_match_records_cache():
             "code": 200,
             "message": "缓存文件不存在",
             "data": {
+                "season": season,
                 "cache_file": str(cache_file)
             }
         }
