@@ -39,8 +39,8 @@
 
           <div class="match-record-tags">
             <span class="match-record-tag">第{{ record.gameNumber }}局</span>
-            <span class="match-record-tag" :class="{ 'tag-active': record.active }">
-              {{ record.active ? '高光' : '记录' }}
+            <span class="match-record-tag" :class="{ 'tag-active': record.isHighlight }">
+              {{ record.isHighlight ? '⭐ MVP' : '📝 记录' }}
             </span>
           </div>
         </div>
@@ -79,10 +79,10 @@ const loadRecords = async () => {
       date: item.date,
       tournament: item.tournament,
       gameNumber: item.game_number,
-      active: item.active,
+      isHighlight: isHighlightRecord(item.content),
       description: formatContent(item.content),
       cover: extractImageFromContent(item.content),
-      rawContent: item.content,
+      rawContent: item.content
     }));
 
     console.log('高光记录加载成功', records.value);
@@ -94,15 +94,20 @@ const loadRecords = async () => {
   }
 };
 
-// 从 content 中提取文字描述（保留换行，去除图片链接）
+// 从 content 中提取文字描述（保留换行和星星符号，去除图片链接）
 const formatContent = (content) => {
   if (!content) return '';
   // 移除图片链接
   const withoutImages = content.replace(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)\S*/gi, '');
-  // 移除 [星星] 等特殊符号
-  const withoutSymbols = withoutImages.replace(/\[.*?\]/g, '');
-  // 保留换行，压缩多余空格
-  return withoutSymbols.replace(/[ \t]+/g, ' ').trim();
+  // 压缩多余空格（保留换行）
+  return withoutImages.replace(/[ \t]+/g, ' ').trim();
+};
+
+// 判断是否为高光记录（content 中含有 "MVP 为 xxx 无言" 或 "MVP 为@无言" 等）
+const isHighlightRecord = (content) => {
+  if (!content) return false;
+  // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 吕布"
+  return /MVP 为 [^无言]*无言/i.test(content);
 };
 
 // 从 content 中提取图片 URL 作为封面
