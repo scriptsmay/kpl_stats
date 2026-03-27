@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    build: {
+      terserOptions: {
+        compress: {
+          // 生产环境移除 console.log
+          drop_console: true,
+          drop_debugger: true,
+        },
+      },
+    },
     server: {
       port: 3000,
       host: true,
