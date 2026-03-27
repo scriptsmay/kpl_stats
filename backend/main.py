@@ -515,6 +515,53 @@ def get_player_seasons_from_cache() -> list:
     print(f"从缓存中提取到 {len(seasons)} 个赛季：{seasons}")
     return seasons
 
+@app.get("/api/player/seasons")
+async def get_player_seasons():
+    """
+    获取选手参赛的所有赛季列表
+
+    从生涯数据缓存中提取选手参加的所有赛季 ID 和名称
+    """
+    try:
+        # 从缓存中提取选手参加的赛季
+        seasons = get_player_seasons_from_cache()
+
+        if not seasons:
+            return {
+                "code": 200,
+                "message": "暂无赛季数据",
+                "data": [],
+                "from_cache": False
+            }
+
+        # 获取赛季名称映射
+        if not is_season_cache_valid():
+            await fetch_seasons_from_api('KPL')
+
+        name_map = get_season_name_map()
+
+        # 构建带名称的赛季列表
+        season_list = [
+            {
+                "season_id": season_id,
+                "season_name": name_map.get(season_id, season_id)
+            }
+            for season_id in seasons
+        ]
+
+        # 按赛季 ID 降序排序（新赛季在前）
+        season_list.sort(key=lambda x: x["season_id"], reverse=True)
+
+        return {
+            "code": 200,
+            "message": "赛季列表获取成功",
+            "data": season_list,
+            "from_cache": True
+        }
+    except Exception as e:
+        print(f"获取选手赛季列表失败：{e}")
+        raise HTTPException(status_code=500, detail=f"获取赛季列表失败：{str(e)}")
+
 # ============= API 接口 =============
 
 @app.get("/api/player/career")
@@ -1222,29 +1269,32 @@ async def clear_halo_video_cache():
 
 @app.get("/api/match/records")
 async def get_match_records(
+    season: str = Query('all', description="赛季 ID，all 表示所有赛季"),
     force_refresh: bool = Query(False, description="是否强制刷新缓存")
 ):
     """
     获取无言的比赛高光记录
 
     参数：
+    - season: 赛季 ID，all 表示所有赛季
     - force_refresh: 设置为 true 时强制从第三方 API 获取最新数据
 
     功能：
     1. 从生涯数据缓存中提取选手参加的所有赛季 ID
-    2. 遍历每个赛季，从第三方 API 获取高光记录
+    2. 遍历指定赛季（或所有赛季），从第三方 API 获取高光记录
     3. 筛选出含有"无言"的记录
-    4. 合并所有赛季的记录并返回
+    4. 合并记录并返回
     """
     # 如果强制刷新，重新获取所有数据
     if force_refresh:
         try:
-            all_records = await fetch_all_season_records()
+            all_records = await fetch_season_records(season)
             save_match_records_cache(all_records)
             return {
                 "code": 200,
                 "message": "数据已强制刷新",
                 "data": all_records,
+                "season": season,
                 "from_cache": False,
                 "refresh_time": datetime.now().isoformat()
             }
@@ -1263,6 +1313,7 @@ async def get_match_records(
             "code": 200,
             "message": "数据来自缓存",
             "data": cache_data["data"],
+            "season": season,
             "from_cache": True,
             "cache_time": cache_data["timestamp"]
         }
@@ -1270,12 +1321,13 @@ async def get_match_records(
     # 缓存无效，重新获取
     try:
         print(f"[{datetime.now()}] 缓存无效，从第三方 API 获取高光记录")
-        all_records = await fetch_all_season_records()
+        all_records = await fetch_season_records(season)
         save_match_records_cache(all_records)
         return {
             "code": 200,
             "message": "数据已更新",
             "data": all_records,
+            "season": season,
             "from_cache": False,
             "refresh_time": datetime.now().isoformat()
         }
@@ -1287,41 +1339,55 @@ async def get_match_records(
                 "code": 200,
                 "message": "数据来自过期缓存（第三方 API 暂时不可用）",
                 "data": cache_data["data"],
+                "season": season,
                 "from_cache": True,
                 "cache_time": cache_data["timestamp"],
                 "is_expired": True
             }
         raise
 
-async def fetch_all_season_records() -> list:
-    """获取所有赛季的高光记录并合并"""
+async def fetch_season_records(season: str = 'all') -> list:
+    """获取指定赛季（或所有赛季）的高光记录并合并"""
     # 从缓存中提取选手参加的赛季
-    seasons = get_player_seasons_from_cache()
-    
-    if not seasons:
+    all_seasons = get_player_seasons_from_cache()
+
+    if not all_seasons:
         print("警告：未能从缓存中提取到赛季信息，使用默认赛季")
-        seasons = ["KPL2026S1", "KCC2025"]  # 降级处理
-    
-    all_records = []
-    
+        all_seasons = ["KPL2026S1", "KCC2025"]  # 降级处理
+
+    # 如果指定了赛季，只获取该赛季的记录
+    if season != 'all':
+        if season in all_seasons:
+            all_seasons = [season]
+        else:
+            print(f"警告：指定赛季 {season} 不在选手参赛赛季列表中")
+            return []
+
+    records_list = []
+
     # 遍历每个赛季获取记录
-    for season_id in seasons:
+    for season_id in all_seasons:
         try:
             print(f"[{datetime.now()}] 开始获取赛季 {season_id} 的高光记录")
             records = await fetch_match_records_from_api(season_id)
-            all_records.extend(records)
+            records_list.extend(records)
         except HTTPException as e:
             print(f"获取赛季 {season_id} 的高光记录失败：{e.detail}")
             continue
         except Exception as e:
             print(f"获取赛季 {season_id} 的高光记录异常：{e}")
             continue
-    
+
     # 按日期降序排序
-    all_records.sort(key=lambda x: x.get("date", ""), reverse=True)
-    
-    print(f"[{datetime.now()}] 所有赛季高光记录获取完成，共 {len(all_records)} 条")
-    return all_records
+    records_list.sort(key=lambda x: x.get("date", ""), reverse=True)
+
+    print(f"[{datetime.now()}] 高光记录获取完成，共 {len(records_list)} 条")
+    return records_list
+
+# 兼容旧版本，保留 fetch_all_season_records 函数
+async def fetch_all_season_records() -> list:
+    """获取所有赛季的高光记录并合并（已废弃，使用 fetch_season_records）"""
+    return await fetch_season_records('all')
 
 @app.get("/api/match/records/cache_info")
 async def get_match_records_cache_info():

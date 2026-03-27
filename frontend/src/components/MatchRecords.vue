@@ -5,6 +5,26 @@
       <p class="result-subtitle">无言职业生涯精彩瞬间</p>
     </div>
 
+    <!-- 赛季筛选 -->
+    <div class="season-filter-container" v-if="seasons.length > 0">
+      <button
+        class="season-filter-btn"
+        :class="{ active: selectedSeason === 'all' }"
+        @click="filterSeason('all')"
+      >
+        📊 全部赛季
+      </button>
+      <button
+        v-for="season in seasons"
+        :key="season.season_id"
+        class="season-filter-btn"
+        :class="{ active: selectedSeason === season.season_id }"
+        @click="filterSeason(season.season_id)"
+      >
+        {{ season.season_name }}
+      </button>
+    </div>
+
     <!-- 加载状态 -->
     <div class="loading" v-if="loading">
       <div class="loading-spinner"></div>
@@ -58,18 +78,36 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getMatchRecords } from '../api/stats';
+import { getMatchRecords, getPlayerSeasons } from '../api/stats';
 
 const loading = ref(false);
 const error = ref(null);
 const records = ref([]);
+const seasons = ref([]);
+const selectedSeason = ref('all');
+
+// 加载选手参赛赛季列表
+const loadSeasons = async () => {
+  try {
+    const res = await getPlayerSeasons();
+    seasons.value = res.data.data || [];
+    console.log('赛季列表加载成功', seasons.value);
+  } catch (err) {
+    console.error('加载赛季列表失败', err);
+    // 使用默认赛季
+    seasons.value = [
+      { season_id: 'KPL2026S1', season_name: '2026 年春季赛' },
+      { season_id: 'KCC2025', season_name: '2025 挑战者杯' }
+    ];
+  }
+};
 
 // 加载高光记录
 const loadRecords = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const res = await getMatchRecords();
+    const res = await getMatchRecords(selectedSeason.value);
     const apiRecords = res.data.data || [];
 
     // 转换为前端需要的格式
@@ -94,13 +132,20 @@ const loadRecords = async () => {
   }
 };
 
+// 筛选赛季
+const filterSeason = async (seasonId) => {
+  if (seasonId === selectedSeason.value) return;
+  selectedSeason.value = seasonId;
+  await loadRecords();
+};
+
 // 从 content 中提取文字描述（保留换行和星星符号，去除图片链接）
 const formatContent = (content) => {
   if (!content) return '';
   // 移除图片链接
   const withoutImages = content.replace(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)\S*/gi, '');
   // 将 [星星] 替换为 ⭐
-  const withStars = withoutImages.replace(/\[星星\]/g, '⭐ ');
+  const withStars = withoutImages.replace(/\[星星\]/g, '⭐');
   // 压缩多余空格（保留换行）
   return withStars.replace(/[ \t]+/g, ' ').trim();
 };
@@ -110,7 +155,7 @@ const isHighlightRecord = (content) => {
   if (!content) return false;
   // 匹配 MVP 为 xxx 无言 的格式，如 "MVP 为@KSG 无言_ (赵昊宇) 关羽"
   // 使用 .*? 非贪婪匹配任意字符（包括 @、_、括号等）
-  return /MVP为.*?无言/i.test(content);
+  return /MVP 为.*?无言/i.test(content);
 };
 
 // 从 content 中提取图片 URL 作为封面
@@ -127,6 +172,7 @@ const handleCoverError = (e) => {
 };
 
 onMounted(() => {
+  loadSeasons();
   loadRecords();
 });
 </script>
