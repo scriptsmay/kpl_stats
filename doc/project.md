@@ -1,22 +1,23 @@
-# 《KPL无言选手生涯数据》项目文档
+# 《KPL 无言选手生涯数据》项目文档
 
 ## 一、项目概述
 
 ### 1.1 项目简介
 
-为电竞选手“KSG.无言”搭建生涯数据展示页面，通过代理第三方API获取数据，前端使用Vue进行纯JSON渲染。
+为电竞选手"KSG.无言"搭建生涯数据展示页面，通过代理第三方 API 获取数据，前端使用 Vue 进行纯 JSON 渲染。
 
 ### 1.2 技术栈
 
 | 层级     | 技术          | 版本   | 用途           |
 | -------- | ------------- | ------ | -------------- |
 | **前端** | Vue 3         | 3.4+   | 数据绑定与渲染 |
+|          | Vue Router    | 4.x    | 路由管理       |
 |          | Vite          | 5.0+   | 构建工具       |
-|          | Axios         | 1.6+   | HTTP请求       |
-|          | 原生CSS       | -      | 页面样式       |
-| **后端** | FastAPI       | 0.110+ | API代理服务    |
-|          | Uvicorn       | 0.28+  | ASGI服务器     |
-|          | HTTPX         | 0.27+  | 异步HTTP客户端 |
+|          | Axios         | 1.6+   | HTTP 请求       |
+|          | 原生 CSS      | -      | 页面样式       |
+| **后端** | FastAPI       | 0.110+ | API 代理服务    |
+|          | Uvicorn       | 0.28+  | ASGI 服务器     |
+|          | HTTPX         | 0.27+  | 异步 HTTP 客户端 |
 |          | Python-dotenv | 1.0+   | 环境变量管理   |
 
 ---
@@ -29,7 +30,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                      前端 (Vue 3)                          │
 │  ┌─────────────────────────────────────────────────────┐  │
-│  │  选手信息卡 │ 战队统计 │ 赛季统计 │ 英雄统计 │ 比赛列表 │  │
+│  │  首页 │ 战队统计 │ 赛季统计 │ 英雄统计 │ 比赛记录 │ 管理面板 │  │
 │  └─────────────────────────────────────────────────────┘  │
 └─────────────────────────┬───────────────────────────────────┘
                           │ HTTP / JSON
@@ -50,7 +51,7 @@
                           │ HTTP / JSON
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    第三方数据API                            │
+│                    第三方数据 API                            │
 │                  (选手生涯数据接口)                          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -62,15 +63,15 @@
         ↓
 2. 后端检查本地缓存
    ├── 缓存有效 → 直接返回
-   └── 缓存无效 → 请求第三方API
+   └── 缓存无效 → 请求第三方 API
         ↓
-3. 第三方API返回数据
+3. 第三方 API 返回数据
         ↓
 4. 保存到本地缓存
         ↓
-5. 返回JSON给前端
+5. 返回 JSON 给前端
         ↓
-6. Vue渲染页面
+6. Vue 渲染页面
 ```
 
 ---
@@ -86,13 +87,20 @@ kpl-player-stats/
 │   └── src/
 │       ├── main.js          # 入口文件
 │       ├── App.vue          # 主页面
+│       ├── router/
+│       │   └── index.js     # 路由配置
 │       ├── api/
-│       │   └── stats.js     # API请求封装
+│       │   └── stats.js     # API 请求封装
+│       ├── components/
+│       │   ├── Home.vue         # 首页组件
+│       │   ├── AdminPanel.vue   # 管理面板组件
+│       │   ├── MatchRecords.vue # 比赛记录页面
+│       │   └── BackToTop.vue    # 回到顶部组件
 │       └── style/
 │           └── main.css     # 样式文件
 ├── backend/                  # 后端项目
-│   ├── main.py              # FastAPI主程序
-│   ├── requirements.txt     # Python依赖
+│   ├── main.py              # FastAPI 主程序
+│   ├── requirements.txt     # Python 依赖
 │   ├── .env                 # 环境变量
 │   ├── cache.json           # 缓存文件（自动生成）
 │   └── .gitignore
@@ -101,9 +109,23 @@ kpl-player-stats/
 
 ---
 
-## 四、API接口文档
+## 四、路由配置
 
-### 4.1 获取选手数据
+前端使用 Vue Router 进行路由管理，当前配置的路由如下：
+
+| 路由      | 组件名称         | 说明           |
+| --------- | ---------------- | -------------- |
+| `/`       | Home.vue         | 首页           |
+| `/admin`  | AdminPanel.vue   | 数据管理面板   |
+| `/records`| MatchRecords.vue | 比赛记录页面   |
+
+路由配置文件位于 `frontend/src/router/index.js`。
+
+---
+
+## 五、API 接口文档
+
+### 5.1 获取选手数据
 
 ```
 GET /api/player/career
@@ -112,7 +134,7 @@ GET /api/player/career
 **参数**：
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| force_refresh | boolean | 否 | 是否强制刷新（默认false） |
+| force_refresh | boolean | 否 | 是否强制刷新（默认 false） |
 
 **响应示例**：
 
@@ -133,7 +155,7 @@ GET /api/player/career
 }
 ```
 
-### 4.2 手动刷新缓存
+### 5.2 手动刷新缓存
 
 ```
 POST /api/admin/refresh
@@ -142,7 +164,7 @@ POST /api/admin/refresh
 **参数**：
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| force | boolean | 否 | 是否强制刷新（默认true） |
+| force | boolean | 否 | 是否强制刷新（默认 true） |
 
 **响应**：
 
@@ -157,7 +179,7 @@ POST /api/admin/refresh
 }
 ```
 
-### 4.3 查看缓存信息
+### 5.3 查看缓存信息
 
 ```
 GET /api/admin/cache_info
@@ -172,18 +194,18 @@ GET /api/admin/cache_info
     "exists": true,
     "cache_time": "2026-03-24T10:30:00",
     "is_valid": true,
-    "expires_in": "23.5小时"
+    "expires_in": "23.5 小时"
   }
 }
 ```
 
-### 4.4 清除缓存
+### 5.4 清除缓存
 
 ```
 DELETE /api/admin/cache
 ```
 
-### 4.5 健康检查
+### 5.5 健康检查
 
 ```
 GET /api/health
@@ -191,15 +213,15 @@ GET /api/health
 
 ---
 
-## 五、快速开始
+## 六、快速开始
 
-### 5.1 环境要求
+### 6.1 环境要求
 
 - Python 3.8+
 - Node.js 16+
 - npm 或 yarn
 
-### 5.2 后端启动
+### 6.2 后端启动
 
 ```bash
 # 1. 进入后端目录
@@ -214,13 +236,13 @@ pip install -r requirements.txt
 
 # 4. 配置环境变量
 cp .env.example .env
-# 编辑 .env，填入第三方API地址
+# 编辑 .env，填入第三方 API 地址
 
 # 5. 启动服务
 uvicorn main:app --reload --port 8000
 ```
 
-### 5.3 前端启动
+### 6.3 前端启动
 
 ```bash
 # 1. 进入前端目录
@@ -233,33 +255,36 @@ npm install
 npm run dev
 ```
 
-### 5.4 访问页面
+### 6.4 访问页面
 
 - 前端：http://localhost:3000
-- 后端API：http://localhost:8000/docs（自动生成文档）
+- 后端 API：http://localhost:8000/docs（自动生成文档）
+- 首页：http://localhost:3000/
+- 管理面板：http://localhost:3000/admin
+- 比赛记录：http://localhost:3000/records
 
 ---
 
-## 六、环境变量配置
+## 七、环境变量配置
 
 **backend/.env**：
 
 ```env
-# 第三方API地址
+# 第三方 API 地址
 THIRD_PARTY_API_URL=https://your-api.com/player/career
 
-# API密钥（如需要）
+# API 密钥（如需要）
 API_KEY=your_api_key
 
-# 缓存有效期（小时），默认24
+# 缓存有效期（小时），默认 24
 CACHE_TTL_HOURS=24
 ```
 
 ---
 
-## 七、核心代码
+## 八、核心代码
 
-### 7.1 后端核心（main.py）
+### 8.1 后端核心（main.py）
 
 ```python
 from fastapi import FastAPI, Query
@@ -285,7 +310,7 @@ async def get_career_data(force_refresh: bool = False):
         if datetime.now() - cache_time < timedelta(hours=CACHE_TTL_HOURS):
             return {"code": 200, "data": cache["data"], "from_cache": True}
 
-    # 请求第三方API
+    # 请求第三方 API
     async with httpx.AsyncClient() as client:
         resp = await client.get("YOUR_API_URL")
         data = resp.json()
@@ -297,7 +322,7 @@ async def get_career_data(force_refresh: bool = False):
     return {"code": 200, "data": data, "from_cache": False}
 ```
 
-### 7.2 前端核心（App.vue）
+### 8.2 前端核心（App.vue）
 
 ```vue
 <template>
@@ -355,9 +380,9 @@ onMounted(async () => {
 
 ---
 
-## 八、部署说明
+## 九、部署说明
 
-### 8.1 生产环境部署
+### 9.1 生产环境部署
 
 **后端部署**：
 
@@ -375,7 +400,7 @@ npm run build
 # 将 dist 目录部署到 Nginx
 ```
 
-### 8.2 Nginx配置示例
+### 9.2 Nginx 配置示例
 
 ```nginx
 server {
@@ -396,7 +421,7 @@ server {
 }
 ```
 
-### 8.3 Docker部署
+### 9.3 Docker 部署
 
 **docker-compose.yml**：
 
@@ -420,11 +445,11 @@ services:
 
 ---
 
-## 九、开发计划
+## 十、开发计划
 
 | 阶段     | 任务               | 时间   |
 | -------- | ------------------ | ------ |
-| Day 1    | 后端搭建、API对接  | 2h     |
+| Day 1    | 后端搭建、API 对接  | 2h     |
 | Day 1    | 前端页面搭建       | 2h     |
 | Day 2    | 数据绑定、样式调整 | 2h     |
 | Day 2    | 测试、部署         | 1h     |
@@ -432,17 +457,17 @@ services:
 
 ---
 
-## 十、常见问题
+## 十一、常见问题
 
 ### Q1: 跨域问题怎么解决？
 
-后端已配置CORS中间件，允许所有来源访问。
+后端已配置 CORS 中间件，允许所有来源访问。
 
 ### Q2: 数据更新不及时怎么办？
 
 调用 `POST /api/admin/refresh` 接口手动刷新缓存。
 
-### Q3: 第三方API挂了怎么办？
+### Q3: 第三方 API 挂了怎么办？
 
 系统会返回过期缓存数据，并标记为过期状态。
 
@@ -452,16 +477,21 @@ services:
 
 ---
 
-## 十一、项目特点
+## 十二、项目特点
 
-✅ **零数据库**：无需安装和配置数据库  
-✅ **极简架构**：前后端分离，代码量少  
-✅ **自动缓存**：减少第三方API调用  
-✅ **手动刷新**：支持强制更新数据  
-✅ **快速部署**：一键启动，配置简单  
+✅ **零数据库**：无需安装和配置数据库
+✅ **极简架构**：前后端分离，代码量少
+✅ **自动缓存**：减少第三方 API 调用
+✅ **手动刷新**：支持强制更新数据
+✅ **快速部署**：一键启动，配置简单
 ✅ **跨域支持**：开箱即用
+✅ **路由管理**：使用 Vue Router 进行前端路由管理
+✅ **组件化**：模块化设计，易于维护和扩展
+✅ **Halo 博客集成**：自动同步博客文章
+✅ **Halo 视频集成**：随机视频展示
+✅ **Halo 图库集成**：照片墙展示，支持懒加载和缩略图
 
 ---
 
-**文档版本**：2.0  
-**更新日期**：2026-03-24
+**文档版本**：2.2
+**更新日期**：2026-03-28

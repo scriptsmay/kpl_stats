@@ -37,6 +37,9 @@ HALO_POSTS_CACHE_TTL_HOURS = int(os.getenv("HALO_POSTS_CACHE_TTL_HOURS", "1"))  
 HALO_VIDEO_GROUP_ID = os.getenv("HALO_VIDEO_GROUP_ID", "attachment-group-25ptmssm")
 HALO_VIDEO_CACHE_TTL_SECONDS = int(os.getenv("HALO_VIDEO_CACHE_TTL_SECONDS", "600"))  # 默认缓存 10 分钟
 
+# Halo 图库 API 配置
+HALO_PHOTO_CACHE_TTL_SECONDS = int(os.getenv("HALO_PHOTO_CACHE_TTL_SECONDS", "3600"))  # 默认缓存 1 小时
+
 # 高光记录 API 配置
 RECORDS_API_URL = os.getenv("RECORDS_API_URL", "http://47.102.210.150:5022/api/records")
 RECORDS_CACHE_TTL_HOURS = int(os.getenv("RECORDS_CACHE_TTL_HOURS", "24"))  # 默认缓存 24 小时（每天 0 点更新）
@@ -287,6 +290,46 @@ def is_halo_video_cache_valid(cache_data: dict) -> bool:
     except (KeyError, ValueError):
         return False
 
+# ============= Halo 图库缓存函数 =============
+
+def get_halo_photo_cache_file() -> Path:
+    """获取 Halo 图库照片列表缓存文件路径"""
+    return DATA_DIR / "cache.halo.photos.json"
+
+def save_halo_photo_cache(data: list):
+    """保存 Halo 图库照片列表到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "items": data
+    }
+    cache_file = get_halo_photo_cache_file()
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] Halo 图库照片列表缓存已保存，共 {len(data)} 张")
+
+def load_halo_photo_cache():
+    """从本地文件加载 Halo 图库照片列表缓存"""
+    cache_file = get_halo_photo_cache_file()
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取 Halo 图库缓存失败：{e}")
+            return None
+    return None
+
+def is_halo_photo_cache_valid(cache_data: dict) -> bool:
+    """检查 Halo 图库照片列表缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return (datetime.now() - cache_time).total_seconds() < HALO_PHOTO_CACHE_TTL_SECONDS
+    except (KeyError, ValueError):
+        return False
+
 async def fetch_halo_videos_from_api():
     """从 Halo API 获取视频附件列表"""
     try:
@@ -294,7 +337,7 @@ async def fetch_halo_videos_from_api():
             headers = {}
             if HALO_API_TOKEN:
                 headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
-            
+
             # Halo 控制台 API 端点：获取指定分组的视频附件
             request_url = f"{HALO_API_URL}/attachments"
             params = {
@@ -302,7 +345,7 @@ async def fetch_halo_videos_from_api():
                 "accepts": "video/*",
                 "size": 100
             }
-            
+
             print(f"[{datetime.now()}] 开始请求 Halo 视频 API: {request_url}")
             response = await client.get(
                 request_url,
@@ -321,6 +364,77 @@ async def fetch_halo_videos_from_api():
         raise HTTPException(status_code=e.response.status_code, detail=f"Halo 视频 API 错误：{e.response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取 Halo 视频失败：{str(e)}")
+
+async def fetch_halo_photos_from_api():
+    """从 Halo API 获取图库照片列表（获取所有分组的最新 N 张）"""
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if HALO_API_TOKEN:
+                headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
+
+            # 直接获取所有照片，不指定分组
+            photos_url = f"{HALO_API_BASE}/apis/console.api.photo.halo.run/v1alpha1/photos"
+            params = {
+                "page": 1,
+                "size": 50,  # 获取足够多的照片用于筛选
+                "keyword": ""
+            }
+            
+            print(f"[{datetime.now()}] 开始请求 Halo 图库照片列表：{photos_url}")
+            photos_response = await client.get(photos_url, headers=headers, params=params, timeout=30.0)
+            photos_response.raise_for_status()
+            photos_data = photos_response.json()
+            
+            items = photos_data.get('items', [])
+            print(f"[{datetime.now()}] 获取到 {len(items)} 张照片")
+            
+            # 提取照片信息
+            all_photos = []
+            for item in items:
+                spec = item.get('spec', {})
+                metadata = item.get('metadata', {})
+                url = spec.get('url', '')
+                
+                # 获取创建时间（从 metadata.creationTimestamp）
+                creation_timestamp = metadata.get('creationTimestamp', '')
+                
+                # 转换为完整 URL
+                if url and not url.startswith('http'):
+                    url = f"{HALO_API_BASE.rstrip('/')}{url}"
+                
+                # 添加缩略图 URL（width=400）
+                thumb_url = f"{url}?width=400" if url else ''
+                
+                # 获取分组信息（从 metadata.labels）
+                labels = metadata.get('labels', {})
+                group_name = labels.get('photo.halo.run/group-name', '')
+                
+                all_photos.append({
+                    "title": spec.get('displayName', spec.get('filename', '未命名')),
+                    "url": url,
+                    "thumb_url": thumb_url,
+                    "mediaType": spec.get('mediaType', 'image/jpeg'),
+                    "size": spec.get('size', 0),
+                    "creationTimestamp": creation_timestamp,
+                    "groupName": group_name
+                })
+            
+            # 按创建时间倒序排序（新照片在前）
+            all_photos.sort(key=lambda x: x.get('creationTimestamp', ''), reverse=True)
+            
+            # 取最新 10 张
+            latest_photos = all_photos[:10]
+            
+            print(f"[{datetime.now()}] Halo 图库 API 请求完成，返回最新 {len(latest_photos)} 张照片")
+            return latest_photos
+            
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Halo 图库 API 请求超时")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Halo 图库 API 错误：{e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取 Halo 图库失败：{str(e)}")
 
 def generate_video_cover_url(permalink: str) -> str:
     """根据视频 permalink 自动生成封面图 URL
@@ -1246,6 +1360,137 @@ async def clear_halo_video_cache():
     清除 Halo 视频缓存
     """
     cache_file = get_halo_video_cache_file()
+    if cache_file.exists():
+        try:
+            os.remove(cache_file)
+            return {
+                "code": 200,
+                "message": "缓存已清除",
+                "data": {
+                    "cache_file": str(cache_file),
+                    "cleared_at": datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"清除缓存失败：{str(e)}")
+    else:
+        return {
+            "code": 200,
+            "message": "缓存文件不存在",
+            "data": {
+                "cache_file": str(cache_file)
+            }
+        }
+
+# ============= Halo 图库 API 接口 =============
+
+@app.get("/api/photo/list")
+async def get_photo_list(
+    force_refresh: bool = Query(False, description="是否强制刷新缓存")
+):
+    """
+    获取 Halo 图库照片列表
+
+    参数：
+    - force_refresh: 设置为 true 时强制从 Halo API 获取最新数据
+    """
+    cache_data = load_halo_photo_cache()
+
+    # 如果强制刷新，直接从 API 获取
+    if force_refresh:
+        try:
+            photos = await fetch_halo_photos_from_api()
+            save_halo_photo_cache(photos)
+            return {
+                "code": 200,
+                "message": "照片列表已强制刷新",
+                "data": photos,
+                "from_cache": False,
+                "refresh_time": datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
+
+    # 非强制刷新，尝试使用缓存
+    if cache_data and is_halo_photo_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用缓存数据，缓存时间：{cache_data['timestamp']}")
+        return {
+            "code": 200,
+            "message": "数据来自缓存",
+            "data": cache_data.get("items", []),
+            "from_cache": True,
+            "cache_time": cache_data["timestamp"]
+        }
+
+    # 缓存无效，从 API 获取
+    try:
+        photos = await fetch_halo_photos_from_api()
+        save_halo_photo_cache(photos)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": photos,
+            "from_cache": False,
+            "refresh_time": datetime.now().isoformat()
+        }
+    except HTTPException as e:
+        # API 失败时，如果有过期缓存，使用过期缓存
+        if cache_data and cache_data.get("items"):
+            print(f"[{datetime.now()}] Halo API 失败，使用过期缓存")
+            return {
+                "code": 200,
+                "message": "数据来自过期缓存（Halo API 暂时不可用）",
+                "data": cache_data.get("items", []),
+                "from_cache": True,
+                "cache_time": cache_data["timestamp"],
+                "is_expired": True
+            }
+        raise
+
+@app.get("/api/photo/cache_info")
+async def get_halo_photo_cache_info():
+    """
+    获取 Halo 图库缓存信息
+    """
+    cache_data = load_halo_photo_cache()
+    cache_file = get_halo_photo_cache_file()
+
+    if not cache_data:
+        return {
+            "code": 200,
+            "message": "缓存不存在",
+            "data": {
+                "exists": False,
+                "cache_file": str(cache_file)
+            }
+        }
+
+    cache_time = datetime.fromisoformat(cache_data["timestamp"])
+    is_valid = is_halo_photo_cache_valid(cache_data)
+    items_count = len(cache_data.get("items", []))
+
+    return {
+        "code": 200,
+        "message": "缓存信息",
+        "data": {
+            "exists": True,
+            "cache_file": str(cache_file),
+            "cache_time": cache_data["timestamp"],
+            "is_valid": is_valid,
+            "items_count": items_count,
+            "expires_in": f"{HALO_PHOTO_CACHE_TTL_SECONDS - (datetime.now() - cache_time).total_seconds():.0f}秒" if is_valid else "已过期",
+            "file_size": cache_file.stat().st_size if cache_file.exists() else 0
+        }
+    }
+
+@app.delete("/api/photo/cache")
+async def clear_halo_photo_cache():
+    """
+    清除 Halo 图库缓存
+    """
+    cache_file = get_halo_photo_cache_file()
     if cache_file.exists():
         try:
             os.remove(cache_file)

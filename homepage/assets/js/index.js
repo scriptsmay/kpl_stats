@@ -353,6 +353,117 @@ function getAge() {
   };
 }
 
+// 加载照片墙
+async function fetchPhotos() {
+  const container = document.getElementById('photoGallery');
+  if (!container) return;
+
+  // 显示加载状态（骨架屏）
+  container.innerHTML = `
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+    <div class="photo-item loading"></div>
+  `;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/photo/list`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.code !== 200) {
+      throw new Error(result.message || '照片墙加载失败');
+    }
+
+    const photos = result.data || [];
+
+    if (photos.length === 0) {
+      container.innerHTML = `
+        <div class="photo-item" style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+          <p>暂无照片</p>
+          <p style="margin-top: 0.5rem; font-size: 0.85rem;">照片正在上传中～</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 使用懒加载渲染照片
+    container.innerHTML = photos
+      .map(
+        (photo) => `
+        <div class="photo-item" onclick="openLightbox('${photo.url}', '${photo.title.replace(/'/g, "\\'")}')">
+          <img 
+            src="${photo.thumb_url}" 
+            alt="${photo.title}" 
+            loading="lazy"
+            onerror="this.onerror=null; this.src='https://picsum.photos/400/400?random=${Math.random()}';"
+          >
+        </div>
+      `,
+      )
+      .join('');
+
+    console.log('[Photos] 照片墙加载成功:', result.message);
+  } catch (error) {
+    console.error('[Photos] 获取照片失败:', error);
+    // 错误时显示默认占位图
+    container.innerHTML = `
+      <div class="photo-item" style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+        <p>照片加载失败</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">请稍后刷新页面重试</p>
+      </div>
+    `;
+  }
+}
+
+// 打开灯箱
+function openLightbox(url, title) {
+  if (!url) return;
+
+  const lightbox = document.createElement('div');
+  lightbox.className = 'photo-lightbox';
+  lightbox.id = 'photoLightbox';
+  lightbox.onclick = closeLightbox;
+
+  lightbox.innerHTML = `
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+      <img src="${url}" alt="${title}" loading="lazy">
+      ${title ? `<div class="lightbox-title">${title}</div>` : ''}
+    </div>
+  `;
+
+  document.body.appendChild(lightbox);
+
+  // 阻止背景滚动
+  document.body.style.overflow = 'hidden';
+}
+
+// 关闭灯箱
+function closeLightbox() {
+  const lightbox = document.getElementById('photoLightbox');
+  if (lightbox) {
+    lightbox.remove();
+    // 恢复背景滚动
+    document.body.style.overflow = '';
+  }
+}
+
+// 键盘 ESC 关闭灯箱
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeLightbox();
+  }
+});
+
 // 页面加载时执行
 document.addEventListener('DOMContentLoaded', () => {
   loadHeroes();
@@ -360,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCareer();
   fetchStats();
   fetchPosts();
+  fetchPhotos();
 
   const result = getAge();
   // console.log(`当前：${result.age}岁`);

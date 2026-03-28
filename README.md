@@ -62,7 +62,9 @@ kpl_stats/
 │       │   └── stats.js     # API 请求封装
 │       ├── components/
 │       │   ├── Home.vue         # 首页组件
-│       │   └── AdminPanel.vue   # 管理面板组件
+│       │   ├── AdminPanel.vue   # 管理面板组件
+│       │   ├── MatchRecords.vue # 比赛记录页面
+│       │   └── BackToTop.vue    # 回到顶部组件
 │       └── styles/
 │           ├── index.css        # 样式入口
 │           ├── variables.css    # CSS 变量
@@ -166,6 +168,22 @@ cp config.example.js config.js
 | **粉丝应援站**    | http://localhost:3000 (homepage) | 静态页面        |
 | **后端 API 文档** | http://localhost:8001/docs       | FastAPI Swagger |
 | **数据管理**      | http://localhost:3000/admin      | 管理面板        |
+| **比赛记录**      | http://localhost:3000/records    | 比赛记录页面    |
+
+**粉丝应援站导航菜单：**
+- 首页 → 关于无言 → 生涯数据（含职业生涯） → 高光时刻（含国服英雄） → 照片墙 → 记录 → 应援
+
+## 路由配置
+
+前端使用 Vue Router 进行路由管理，当前配置的路由如下：
+
+| 路由      | 组件名称         | 说明           |
+| --------- | ---------------- | -------------- |
+| `/`       | Home.vue         | 首页           |
+| `/admin`  | AdminPanel.vue   | 数据管理面板   |
+| `/records`| MatchRecords.vue | 比赛记录页面   |
+
+路由配置文件位于 `frontend/src/router/index.js`。
 
 ## API 接口
 
@@ -299,6 +317,47 @@ GET /api/video/cache_info
 DELETE /api/video/cache
 ```
 
+### Halo 图库接口
+
+#### 获取照片列表
+
+```http
+GET /api/photo/list?force_refresh=false
+```
+
+**响应示例：**
+
+```json
+{
+  "code": 200,
+  "message": "照片列表获取成功",
+  "data": [
+    {
+      "title": "赛场瞬间.jpg",
+      "url": "https://blog.kplwuyan.site/upload/photo.jpg",
+      "thumb_url": "https://blog.kplwuyan.site/upload/photo.jpg?width=400",
+      "mediaType": "image/jpeg",
+      "size": 1024000,
+      "creationTimestamp": "2026-03-28T10:00:00Z"
+    }
+  ],
+  "from_cache": true,
+  "cache_time": "2026-03-28T12:00:00"
+}
+```
+
+#### 查看图库缓存
+
+```http
+GET /api/photo/cache_info
+```
+
+#### 清除图库缓存
+
+```http
+DELETE /api/photo/cache
+```
+
 ### 其他接口
 
 - `GET /api/health` - 健康检查
@@ -330,6 +389,9 @@ HALO_POSTS_CACHE_TTL_HOURS=1
 # Halo 视频 API 配置
 HALO_VIDEO_GROUP_ID=attachment-group-25ptmssm
 HALO_VIDEO_CACHE_TTL_SECONDS=600
+
+# Halo 图库 API 配置
+HALO_PHOTO_CACHE_TTL_SECONDS=3600  # 照片列表缓存时间（秒）
 ```
 
 ### 前端 (frontend/.env.development)
@@ -359,6 +421,8 @@ window.API_BASE_URL = 'https://data.kplwuyan.site/api';
 - ✅ **跨域支持** - Vite 代理，开发环境开箱即用
 - ✅ **零数据库** - 文件缓存，无需额外配置
 - ✅ **赛季分类** - 支持按赛季类型（全部/联赛/杯赛）筛选
+- ✅ **比赛记录** - 展示详细比赛记录列表
+- ✅ **回到顶部** - 快速回到页面顶部的便捷功能
 
 ### Halo 博客集成
 
@@ -373,6 +437,14 @@ window.API_BASE_URL = 'https://data.kplwuyan.site/api';
 - ✅ **封面图生成** - 根据视频 URL 自动生成封面图
 - ✅ **列表缓存** - 10 分钟缓存，提高响应速度
 - ✅ **降级处理** - API 失败时使用过期缓存
+
+### Halo 图库集成
+
+- ✅ **照片墙** - 展示 Halo 图库中的照片
+- ✅ **懒加载** - 图片使用 lazyload 优化加载性能
+- ✅ **缩略图** - 自动使用 `?width=400` 参数获取小尺寸缩略图
+- ✅ **灯箱效果** - 点击照片以灯箱形式查看原图
+- ✅ **缓存优化** - 1 小时缓存，减少 API 调用
 
 ## 部署
 
@@ -488,5 +560,5 @@ MIT License
 **项目维护者**: scriptsmay
 **特别感谢**: qwen code 帮助我完成了整个项目
 
-**文档版本**: 2.0
-**更新日期**: 2026-03-25
+**文档版本**: 2.2
+**更新日期**: 2026-03-28
