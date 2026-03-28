@@ -73,7 +73,6 @@
 
 .main-content > * {
   background: var(--bg-card);
-  border-radius: 0 0 var(--border-radius-xxl) var(--border-radius-xxl);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
 }
@@ -156,10 +155,6 @@
   .nav-link {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-md);
-  }
-
-  .main-content > * {
-    border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
   }
 
   .result-section {

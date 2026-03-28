@@ -18,12 +18,10 @@
     <footer class="app-footer">
       <div class="footer-content">
         <p class="disclaimer">
-          ⚠️ 免责声明：所有数据均由 KPL 官方数据平台提供，本站只做收集与展示，不zuo勘误。
-          数据仅供参考，如有异议请以 KPL 官方数据为准。
+          ⚠️ 免责声明：本站数据来源于 KPL 官方平台，仅作收集与展示，不提供勘误服务。所有数据仅供参考，如有疑问，请以 KPL
+          官方发布内容为准。
         </p>
-        <p class="footer-text">
-          © 2026 KPL 无言数据站 · 用数据记录成长
-        </p>
+        <p class="footer-text">© 2026 KPL 无言数据站 · 用数据记录成长</p>
       </div>
     </footer>
 
