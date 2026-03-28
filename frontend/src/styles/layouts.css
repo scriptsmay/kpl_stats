@@ -102,6 +102,37 @@
   font-size: var(--font-size-md);
 }
 
+/* 应用页脚 */
+.app-footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0 0 var(--border-radius-xxl) var(--border-radius-xxl);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.footer-content {
+  text-align: center;
+}
+
+.disclaimer {
+  color: var(--gray-600);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--spacing-md) 0;
+  line-height: var(--line-height-relaxed);
+  padding: var(--spacing-md);
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid var(--warning-color);
+  border-radius: var(--border-radius-md);
+}
+
+.footer-text {
+  color: var(--gray-500);
+  font-size: var(--font-size-xs);
+  margin: 0;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .app-wrapper {
@@ -143,5 +174,14 @@
 
   .result-title {
     font-size: var(--font-size-xxl);
+  }
+
+  .app-footer {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  .disclaimer {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-sm);
   }
 }
