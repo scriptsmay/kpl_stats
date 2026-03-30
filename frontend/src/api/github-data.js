@@ -44,41 +44,67 @@ function setLocalCache(key, data) {
 
 /**
  * 通用 GitHub 数据获取
- * @param {string} namespace - 数据命名空间，如 'player-abilities'
- * @param {string} season - 赛季 ID，如 'KPL2026S1'
- * @param {string} [date] - 可选日期 YYYYMMDD，不传则取最新
+ * 支持三种文件名格式：
+ *   - namespace.season.date.json（有赛季有日期）
+ *   - namespace.date.json（无赛季有日期）
+ *   - namespace.json（无赛季无日期，固定文件）
+ * @param {string} namespace - 数据命名空间
+ * @param {string} season - 赛季 ID，空字符串表示无赛季
+ * @param {string} [date] - 可选日期 YYYYMMDD
  */
 async function fetchData(namespace, season, date) {
-  const cacheKey = `${namespace}.${season}.${date || 'latest'}`;
+  const cacheKey = `${namespace}.${season || 'noseason'}.${date || 'latest'}`;
 
   // 1. 检查缓存
   const cached = getLocalCache(cacheKey);
-  if (cached) {
-    console.log(`[${cacheKey}]读取缓存:`, cached);
-    return cached;
-  }
+  if (cached) return cached;
 
-  // 2. 如果没有指定日期，先查 GitHub 目录找最新文件
+  // 2. 文件名
   let filename;
   if (date) {
-    filename = `${namespace}.${season}.${date}.json`;
+    filename = season
+      ? `${namespace}.${season}.${date}.json`
+      : `${namespace}.${date}.json`;
   } else {
     // 通过 GitHub API 列出目录，找到最新的文件
-
     try {
       const { data: files } = await axios.get(GITHUB_API_FILELIST, { timeout: 10000 });
-      // 筛选匹配的文件
-      const pattern = new RegExp(`^${namespace.replace('.', '\\.')}.${season.replace('.', '\\.')}.(\\d{8})\\.json$`);
-      const matched = files
-        .filter((f) => f.type === 'file' && pattern.test(f.name))
-        .map((f) => ({ name: f.name, date: f.name.match(pattern)?.[1] }))
-        .filter((f) => f.date)
-        .sort((a, b) => b.date.localeCompare(a.date));
 
-      if (matched.length === 0) {
-        throw new Error(`未找到 ${namespace}.${season} 的数据文件`);
+      let matched;
+
+      if (season) {
+        // 有赛季：namespace.season.date.json
+        const pattern = new RegExp(`^${namespace.replace('.', '\\.')}.${season.replace('.', '\\.')}.(\\d{8})\\.json$`);
+        matched = files
+          .filter((f) => f.type === 'file' && pattern.test(f.name))
+          .map((f) => ({ name: f.name, date: f.name.match(pattern)?.[1] }))
+          .filter((f) => f.date)
+          .sort((a, b) => b.date.localeCompare(a.date));
+      } else {
+        // 无赛季：先尝试 namespace.date.json，再尝试 namespace.json
+        const datedPattern = new RegExp(`^${namespace.replace('.', '\\.')}.(\\d{8})\\.json$`);
+        matched = files
+          .filter((f) => f.type === 'file' && datedPattern.test(f.name))
+          .map((f) => ({ name: f.name, date: f.name.match(datedPattern)?.[1] }))
+          .filter((f) => f.date)
+          .sort((a, b) => b.date.localeCompare(a.date));
+
+        // 没有带日期的文件，尝试固定文件名 namespace.json
+        if (matched.length === 0) {
+          const fixedFile = files.find((f) => f.name === `${namespace}.json`);
+          if (fixedFile) {
+            filename = fixedFile.name;
+          }
+        }
       }
-      filename = matched[0].name;
+
+      if (!filename) {
+        if (matched && matched.length > 0) {
+          filename = matched[0].name;
+        } else {
+          throw new Error(`未找到 ${namespace}${season ? '.' + season : ''} 的数据文件`);
+        }
+      }
     } catch (err) {
       console.error('GitHub API 查询失败:', err);
       throw err;
@@ -99,69 +125,61 @@ async function fetchData(namespace, season, date) {
 
 // ====== 具体数据接口 ======
 
-/**
- * 获取选手能力数据
- * @param {string} season - 赛季 ID
- */
+/** 选手能力数据（有赛季） */
 export const getPlayerAbilities = (season) => fetchData('player-abilities', season);
 
-/**
- * 获取全选手统计数据
- * @param {string} season - 赛季 ID
- */
+/** 全选手统计数据（有赛季） */
 export const getAllPlayerStats = (season) => fetchData('all-player-stats', season);
 
-/**
- * 获取联盟英雄胜率
- * @param {string} season - 赛季 ID
- */
+/** 联盟英雄胜率（有赛季） */
 export const getHeroWinRate = (season) => fetchData('hero-win-rate', season);
 
-/**
- * 获取选手英雄胜场统计
- * @param {string} season - 赛季 ID
- */
+/** 选手英雄胜场统计（有赛季） */
 export const getPlayerHeroSummary = (season) => fetchData('player-hero-summary', season);
 
-/**
- * 获取选手胜场数据
- * @param {string} season - 赛季 ID
- */
+/** 选手胜场数据（有赛季） */
 export const getPlayerWinStats = (season) => fetchData('player-win-stats', season);
 
-/**
- * 获取选手负场数据
- * @param {string} season - 赛季 ID
- */
+/** 选手负场数据（有赛季） */
 export const getPlayerLoseStats = (season) => fetchData('player-lose-stats', season);
 
-/**
- * 获取战队伤害分布
- * @param {string} season - 赛季 ID
- */
+/** 战队伤害分布（有赛季） */
 export const getTeamDamageDistribution = (season) => fetchData('team-damage-distribution', season);
 
-/**
- * 获取获胜亲近度分析
- * @param {string} season - 赛季 ID
- */
+/** 获胜亲近度分析（有赛季） */
 export const getWinAffinityAnalysis = (season) => fetchData('win-affinity-analysis', season);
 
-/**
- * 获取选手生涯数据
- * @param {string} season - 赛季 ID
- */
-export const getPlayerCareer = (season) => fetchData('player-career-wuyan', season);
+/** 选手生涯数据（无赛季，跨赛季累计） */
+export const getPlayerCareer = () => fetchData('player-career-wuyan', '');
 
-/**
- * 清除所有本地缓存
- */
+/** 清除所有本地缓存 */
 export const clearDataCache = () => {
   const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
   keys.forEach((k) => localStorage.removeItem(k));
 };
 
-/**
- * 获取当前最新赛季 ID（默认）
- */
+/** 默认赛季 */
 export const DEFAULT_SEASON = 'KPL2026S1';
+
+// 赛季名称映射（缓存）
+let seasonNameMap = null;
+
+/**
+ * 获取赛季名称映射 { KPL2026S1: 'KPL2026春季赛', ... }
+ */
+export async function getSeasonNameMap() {
+  if (seasonNameMap) return seasonNameMap;
+  try {
+    const res = await fetchData('seasons-list', '');
+    const list = Array.isArray(res) ? res : (res.data || []);
+    seasonNameMap = {};
+    list.forEach(s => {
+      seasonNameMap[s.tournament_id] = s.tournament_name;
+    });
+    return seasonNameMap;
+  } catch (err) {
+    console.error('获取赛季列表失败:', err);
+    // 降级
+    return { KPL2026S1: 'KPL2026春季赛', KCC2025: '2025挑战者杯' };
+  }
+}

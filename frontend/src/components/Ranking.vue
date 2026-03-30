@@ -183,7 +183,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { getAllPlayerStats, DEFAULT_SEASON } from '../api/github-data';
+import { getAllPlayerStats, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
 import RankCard from './RankCard.vue';
 
 // 注册 Chart.js 组件
@@ -195,7 +195,7 @@ const statsData = ref(null);
 const rankRadarRef = ref(null);
 let rankChart = null;
 
-const seasonName = '2026 春季赛';
+const seasonName = ref(DEFAULT_SEASON);
 
 const totalPlayers = computed(() => statsData.value?.total_players || 114);
 
@@ -212,8 +212,12 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const res = await getAllPlayerStats(DEFAULT_SEASON);
-    statsData.value = res.data;
+    const [statsRes, nameMap] = await Promise.all([
+      getAllPlayerStats(DEFAULT_SEASON),
+      getSeasonNameMap(),
+    ]);
+    statsData.value = statsRes.data;
+    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载排名数据失败:', err);
     error.value = `加载失败：${err.message}`;
@@ -311,8 +315,7 @@ onUnmounted(() => {
 
 <style scoped>
 .ranking-page {
-  max-width: 1400px;
-  margin: 0 auto;
+  /* padding: 20px; */
 }
 
 .player-overview-card {

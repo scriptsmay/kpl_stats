@@ -1,7 +1,7 @@
 <template>
   <div class="result-section">
     <div class="result-header">
-      <div class="result-title">选手职业生涯数据</div>
+      <div class="result-title">🏆 选手职业生涯数据</div>
     </div>
 
     <!-- 赛季筛选 -->

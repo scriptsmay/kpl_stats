@@ -7,7 +7,7 @@
   <div class="result-section heroes-page">
     <div class="result-header">
       <h1 class="result-title">⚔️ 英雄池分析</h1>
-      <p class="result-subtitle">对抗路选手英雄使用数据与联盟胜率对比</p>
+      <p class="result-subtitle">对抗路选手英雄使用数据与联盟胜率对比 · {{ seasonName }}</p>
     </div>
 
     <!-- 加载状态 -->
@@ -102,17 +102,19 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
-import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { getPlayerCareer, getHeroWinRate, DEFAULT_SEASON } from '../api/github-data';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Colors } from 'chart.js';
+import { getPlayerCareer, getHeroWinRate, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
 
 // 注册 Chart.js 组件
-Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Colors);
+// Chart.register(Colors);
 
 // 状态
 const loading = ref(false);
 const error = ref(null);
 const heroStats = ref([]);
 const leagueHeroes = ref([]);
+const seasonName = ref(DEFAULT_SEASON);
 
 // 图表引用
 const barChartRef = ref(null);
@@ -179,18 +181,29 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [heroRes, leagueRes] = await Promise.all([
-      getPlayerHeroSummary(DEFAULT_SEASON),
+    const [careerRes, leagueRes, nameMap] = await Promise.all([
+      getPlayerCareer(),
       getHeroWinRate(DEFAULT_SEASON),
+      getSeasonNameMap(),
     ]);
 
-    if (heroRes.code === 200) {
-      heroStats.value = Array.isArray(heroRes.data) ? heroRes.data : [heroRes.data];
+    // 从 career 数据中获取英雄列表
+    if (careerRes.code === 200 && careerRes.data?.hero_stats) {
+      heroStats.value = careerRes.data.hero_stats.map((h) => ({
+        hero_id: h.hero_id,
+        hero_name: h.hero_name,
+        total_matches: h.battles,
+        win_matches: h.wins,
+        win_rate: h.win_rate,
+      }));
     }
 
+    // 联盟英雄胜率 — 筛选对抗路
     if (leagueRes.code === 200 && Array.isArray(leagueRes.data)) {
       leagueHeroes.value = leagueRes.data.filter((h) => h.position === '对抗路');
     }
+
+    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('英雄池数据加载失败:', err);
     error.value = '数据加载失败，请检查网络后重试';
@@ -341,9 +354,7 @@ onUnmounted(() => {
 
 <style scoped>
 .heroes-page {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px;
+  /* padding: 20px; */
 }
 
 .chart-container {

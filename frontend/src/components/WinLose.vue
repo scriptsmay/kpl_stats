@@ -6,7 +6,7 @@
   <div class="result-section winlose-page">
     <div class="result-header">
       <h1 class="result-title">⚔️ 胜负对比分析</h1>
-      <p class="result-subtitle">赢和输的时候，无言的表现有什么不同？</p>
+      <p class="result-subtitle">赢和输的时候，无言的表现有什么不同？ · {{ seasonName }}</p>
     </div>
 
     <div class="loading" v-if="loading">
@@ -51,10 +51,26 @@
       <div class="compare-section">
         <div class="section-title">🎯 团战对比</div>
         <div class="compare-grid">
-          <CompareCard label="大型团战平均伤害" :win="winData.avg_big_fight_damage" :lose="loseData.avg_big_fight_damage" />
-          <CompareCard label="大型团战平均承伤" :win="winData.avg_big_fight_damage_taken" :lose="loseData.avg_big_fight_damage_taken" />
-          <CompareCard label="大型团战核心伤害" :win="winData.avg_big_fight_carry_damage" :lose="loseData.avg_big_fight_carry_damage" />
-          <CompareCard label="大型团战核心击杀" :win="winData.avg_big_fight_carry_kills" :lose="loseData.avg_big_fight_carry_kills" />
+          <CompareCard
+            label="大型团战平均伤害"
+            :win="winData.avg_big_fight_damage"
+            :lose="loseData.avg_big_fight_damage"
+          />
+          <CompareCard
+            label="大型团战平均承伤"
+            :win="winData.avg_big_fight_damage_taken"
+            :lose="loseData.avg_big_fight_damage_taken"
+          />
+          <CompareCard
+            label="大型团战核心伤害"
+            :win="winData.avg_big_fight_carry_damage"
+            :lose="loseData.avg_big_fight_carry_damage"
+          />
+          <CompareCard
+            label="大型团战核心击杀"
+            :win="winData.avg_big_fight_carry_kills"
+            :lose="loseData.avg_big_fight_carry_kills"
+          />
         </div>
       </div>
 
@@ -65,7 +81,11 @@
           <CompareCard label="平均蓝 buff" :win="winData.avg_blue_buff" :lose="loseData.avg_blue_buff" />
           <CompareCard label="平均红 buff" :win="winData.avg_red_buff" :lose="loseData.avg_red_buff" />
           <CompareCard label="平均入侵次数" :win="winData.avg_invasion_jungle" :lose="loseData.avg_invasion_jungle" />
-          <CompareCard label="平均入侵时长" :win="winData.avg_invasion_duration" :lose="loseData.avg_invasion_duration" />
+          <CompareCard
+            label="平均入侵时长"
+            :win="winData.avg_invasion_duration"
+            :lose="loseData.avg_invasion_duration"
+          />
           <CompareCard label="平均河道时长" :win="winData.avg_river_duration" :lose="loseData.avg_river_duration" />
           <CompareCard label="平均控制时长" :win="winData.avg_control_duration" :lose="loseData.avg_control_duration" />
         </div>
@@ -76,9 +96,17 @@
         <div class="section-title">⏱️ 10 分钟数据</div>
         <div class="compare-grid">
           <CompareCard label="10分钟平均伤害" :win="winData.avg_ten_min_damage" :lose="loseData.avg_ten_min_damage" />
-          <CompareCard label="10分钟伤害占比" :win="winData.avg_damage_10min_ratio" :lose="loseData.avg_damage_10min_ratio" />
+          <CompareCard
+            label="10分钟伤害占比"
+            :win="winData.avg_damage_10min_ratio"
+            :lose="loseData.avg_damage_10min_ratio"
+          />
           <CompareCard label="10分钟平均经济" :win="winData.avg_economy_10min" :lose="loseData.avg_economy_10min" />
-          <CompareCard label="10分钟经济差" :win="winData.avg_economy_diff_10min" :lose="loseData.avg_economy_diff_10min" />
+          <CompareCard
+            label="10分钟经济差"
+            :win="winData.avg_economy_diff_10min"
+            :lose="loseData.avg_economy_diff_10min"
+          />
         </div>
       </div>
 
@@ -98,11 +126,8 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
-import {
-  Chart, BarController, BarElement, CategoryScale, LinearScale,
-  Tooltip, Legend
-} from 'chart.js';
-import { getPlayerWinStats, getPlayerLoseStats, DEFAULT_SEASON } from '../api/github-data';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import { getPlayerWinStats, getPlayerLoseStats, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
 import CompareCard from './CompareCard.vue';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -113,6 +138,7 @@ const winData = ref(null);
 const loseData = ref(null);
 const damageChartRef = ref(null);
 const economyChartRef = ref(null);
+const seasonName = ref(DEFAULT_SEASON);
 
 let damageChart = null;
 let economyChart = null;
@@ -142,7 +168,10 @@ const insights = computed(() => {
 
   const fightDiff = ((w.avg_big_fight_damage || 0) - (l.avg_big_fight_damage || 0)).toFixed(0);
   if (fightDiff > 0) {
-    result.push({ icon: '🔥', text: `获胜时大型团战平均伤害多 ${Number(fightDiff).toLocaleString()}，团战表现直接影响胜负` });
+    result.push({
+      icon: '🔥',
+      text: `获胜时大型团战平均伤害多 ${Number(fightDiff).toLocaleString()}，团战表现直接影响胜负`,
+    });
   }
 
   if (result.length === 0) {
@@ -156,12 +185,14 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [winRes, loseRes] = await Promise.all([
+    const [winRes, loseRes, nameMap] = await Promise.all([
       getPlayerWinStats(DEFAULT_SEASON),
       getPlayerLoseStats(DEFAULT_SEASON),
+      getSeasonNameMap(),
     ]);
     winData.value = winRes.data;
     loseData.value = loseRes.data;
+    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载胜负数据失败:', err);
     error.value = `加载失败：${err.message}`;
@@ -322,8 +353,7 @@ onUnmounted(() => {
 
 <style scoped>
 .winlose-page {
-  max-width: 1000px;
-  margin: 0 auto;
+  /* padding: 20px; */
 }
 
 .compare-section {
@@ -384,7 +414,11 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .compare-grid { grid-template-columns: repeat(2, 1fr); }
-  .chart-canvas { height: 260px !important; }
+  .compare-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chart-canvas {
+    height: 260px !important;
+  }
 }
 </style>

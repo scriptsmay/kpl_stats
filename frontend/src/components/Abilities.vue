@@ -6,7 +6,7 @@
   <div class="result-section abilities-page">
     <div class="result-header">
       <h1 class="result-title">🎯 选手能力画像</h1>
-      <p class="result-subtitle">基于 KPL 官方数据的 12 维能力评估</p>
+      <p class="result-subtitle">基于 KPL 官方数据的 12 维能力评估 · {{ seasonName }}</p>
     </div>
 
     <!-- 加载状态 -->
@@ -86,16 +86,33 @@
 import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
 import {
   Chart,
-  RadarController, RadialLinearScale, LineElement, PointElement, Filler,
-  BarController, BarElement, CategoryScale, LinearScale,
-  Tooltip, Legend,
+  RadarController,
+  RadialLinearScale,
+  LineElement,
+  PointElement,
+  Filler,
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
 } from 'chart.js';
-import { getPlayerAbilities, DEFAULT_SEASON } from '../api/github-data';
+import { getPlayerAbilities, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
 
 // 注册 Chart.js 组件
 Chart.register(
-  RadarController, RadialLinearScale, LineElement, PointElement, Filler,
-  BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend
+  RadarController,
+  RadialLinearScale,
+  LineElement,
+  PointElement,
+  Filler,
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
 );
 
 const loading = ref(false);
@@ -104,6 +121,7 @@ const abilityData = ref(null);
 const positionAverages = ref(null);
 const radarChartRef = ref(null);
 const compareChartRef = ref(null);
+const seasonName = ref(DEFAULT_SEASON);
 
 let radarChart = null;
 let compareChart = null;
@@ -167,9 +185,13 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const res = await getPlayerAbilities(DEFAULT_SEASON);
-    abilityData.value = res.data;
-    positionAverages.value = res.position_averages?.[res.data?.player_position] || null;
+    const [abilitiesRes, nameMap] = await Promise.all([
+      getPlayerAbilities(DEFAULT_SEASON),
+      getSeasonNameMap(),
+    ]);
+    abilityData.value = abilitiesRes.data;
+    positionAverages.value = abilitiesRes.position_averages?.[abilitiesRes.data?.player_position] || null;
+    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载能力数据失败:', err);
     error.value = `加载失败：${err.message}`;
@@ -347,8 +369,7 @@ onUnmounted(() => {
 
 <style scoped>
 .abilities-page {
-  max-width: 1400px;
-  margin: 0 auto;
+  /* padding: 20px; */
 }
 
 .rating-overview {
