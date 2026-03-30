@@ -1,7 +1,6 @@
 <!--
  * Heroes.vue - 英雄池分析页面
- * 展示选手（KSG.无言）的英雄使用数据与联盟英雄胜率对比
- * 图表使用 Chart.js
+ * 数据源：player-hero-summary（英雄统计）+ player-hero-battles（对局详情）
  -->
 <template>
   <div class="result-section heroes-page">
@@ -10,21 +9,18 @@
       <p class="result-subtitle">对抗路选手英雄使用数据与联盟胜率对比 · {{ seasonName }}</p>
     </div>
 
-    <!-- 加载状态 -->
     <div class="loading" v-if="loading">
       <div class="loading-spinner"></div>
       <div class="loading-text">正在加载英雄池数据...</div>
     </div>
 
-    <!-- 错误状态 -->
     <div class="error-message" v-else-if="error">
       <p>{{ error }}</p>
       <button class="btn btn-primary" @click="loadData">重试</button>
     </div>
 
-    <!-- 数据内容 -->
     <div v-else-if="heroStats.length">
-      <!-- 1. 英雄池概览 -->
+      <!-- 概览 -->
       <div class="summary-cards">
         <div class="summary-card">
           <div class="summary-card-value">{{ heroStats.length }}</div>
@@ -44,13 +40,13 @@
         </div>
       </div>
 
-      <!-- 2. 英雄使用排行柱状图 -->
+      <!-- 使用排行柱状图 -->
       <div class="chart-container">
-        <div class="chart-title">英雄使用次数排行 TOP 15</div>
+        <div class="chart-title">英雄使用次数排行</div>
         <canvas ref="barChartRef" class="bar-canvas"></canvas>
       </div>
 
-      <!-- 3. 英雄详情表格 -->
+      <!-- 英雄详情表格 -->
       <div class="hero-table-section">
         <div class="section-title">英雄详情</div>
         <div class="hero-table-wrapper">
@@ -63,6 +59,7 @@
                 <th class="col-num">胜场</th>
                 <th class="col-num">负场</th>
                 <th class="col-num">胜率</th>
+                <th class="col-action">详情</th>
               </tr>
             </thead>
             <tbody>
@@ -85,13 +82,52 @@
                 <td class="col-num">
                   <span :class="winRateClass(hero.win_rate)">{{ hero.win_rate }}</span>
                 </td>
+                <td class="col-action">
+                  <button v-if="heroBattles[hero.hero_name]" class="detail-btn" @click="toggleDetail(hero.hero_name)">
+                    {{ expandedHero === hero.hero_name ? '收起' : '查看' }}
+                  </button>
+                  <span v-else class="no-data">-</span>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- 4. 英雄胜率 vs 联盟平均 -->
+      <!-- 对局详情展开区 -->
+      <div v-if="expandedHero && heroBattles[expandedHero]" class="battles-section">
+        <div class="section-title">{{ expandedHero }} 对局详情 ({{ heroBattles[expandedHero].total }} 局)</div>
+        <div class="battles-list">
+          <div
+            v-for="(battle, idx) in heroBattles[expandedHero].battles"
+            :key="idx"
+            class="battle-card"
+            :class="{ win: battle.is_win, lose: !battle.is_win, mvp: battle.is_mvp }"
+          >
+            <div class="battle-header">
+              <span class="battle-result" :class="battle.is_win ? 'win' : 'lose'">{{
+                battle.is_win ? '胜' : '负'
+              }}</span>
+              <span v-if="battle.is_mvp" class="battle-mvp">⭐ MVP</span>
+              <span class="battle-kda">{{ battle.kda }}</span>
+              <span class="battle-vs">{{ battle.versus_info }}</span>
+              <span class="battle-date">{{ formatMatchDate(battle.match_date) }}</span>
+            </div>
+            <div class="battle-detail">
+              <div class="battle-equip">
+                <span class="equip-label">出装：</span>
+                <span class="equip-list">{{ (battle.equip_ids || []).join(' / ') }}</span>
+              </div>
+              <div v-if="battle.rune" class="battle-rune">
+                <span class="rune-label">铭文：</span>
+                <span class="rune-list">{{ formatRune(battle.rune) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 胜率 vs 联盟 -->
       <div class="chart-container" v-if="compareData.length">
         <div class="chart-title">胜率 vs 联盟对抗路平均</div>
         <canvas ref="compareChartRef" class="bar-canvas"></canvas>
@@ -102,105 +138,105 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
-import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Colors } from 'chart.js';
-import { getPlayerCareer, getHeroWinRate, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import {
+  getPlayerHeroSummary,
+  getPlayerHeroBattles,
+  getHeroWinRate,
+  getSeasonNameMap,
+  DEFAULT_SEASON,
+} from '../api/github-data';
 
-// 注册 Chart.js 组件
-Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Colors);
-// Chart.register(Colors);
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-// 状态
 const loading = ref(false);
 const error = ref(null);
 const heroStats = ref([]);
 const leagueHeroes = ref([]);
+const heroBattles = ref({});
+const expandedHero = ref(null);
 const seasonName = ref(DEFAULT_SEASON);
 
-// 图表引用
 const barChartRef = ref(null);
 const compareChartRef = ref(null);
 let barChart = null;
 let compareChart = null;
 
-// 英雄头像 URL
 const heroAvatar = (id) => `https://game.gtimg.cn/images/yxzj/img201606/heroimg/${id}/${id}.jpg`;
-
 const handleAvatarError = (e) => {
   e.target.style.display = 'none';
 };
 
-// ====== 计算属性 ======
-
-const totalMatches = computed(() => heroStats.value.reduce((sum, h) => sum + (h.total_matches || 0), 0));
-
-const totalWins = computed(() => heroStats.value.reduce((sum, h) => sum + (h.win_matches || 0), 0));
-
-const overallWinRate = computed(() => {
-  if (!totalMatches.value) return 0;
-  return Math.round((totalWins.value / totalMatches.value) * 1000) / 10;
-});
-
+const totalMatches = computed(() => heroStats.value.reduce((s, h) => s + (h.total_matches || 0), 0));
+const totalWins = computed(() => heroStats.value.reduce((s, h) => s + (h.win_matches || 0), 0));
+const overallWinRate = computed(() =>
+  totalMatches.value ? Math.round((totalWins.value / totalMatches.value) * 1000) / 10 : 0,
+);
 const overallWinRateText = computed(() => overallWinRate.value + '%');
-
-const overallWinRateClass = computed(() => {
-  if (overallWinRate.value >= 60) return 'win';
-  if (overallWinRate.value < 45) return 'lose';
-  return '';
-});
-
+const overallWinRateClass = computed(() =>
+  overallWinRate.value >= 60 ? 'win' : overallWinRate.value < 45 ? 'lose' : '',
+);
 const heroStatsSorted = computed(() => [...heroStats.value].sort((a, b) => b.total_matches - a.total_matches));
-
 const winRateClass = (rate) => {
   const v = parseFloat(rate);
-  if (v >= 60) return 'text-success';
-  if (v < 45) return 'text-danger';
-  return '';
+  return v >= 60 ? 'text-success' : v < 45 ? 'text-danger' : '';
 };
 
 const compareData = computed(() => {
   if (!heroStats.value.length || !leagueHeroes.value.length) return [];
-  const leagueMap = {};
+  const map = {};
   leagueHeroes.value.forEach((h) => {
-    leagueMap[h.hero_id] = h;
+    map[h.hero_id] = h;
   });
   return heroStats.value
-    .filter((h) => leagueMap[h.hero_id])
+    .filter((h) => map[h.hero_id])
     .map((h) => ({
       hero_name: h.hero_name,
       player_rate: parseFloat(h.win_rate),
-      league_rate: parseFloat(leagueMap[h.hero_id].win_rate),
+      league_rate: parseFloat(map[h.hero_id].win_rate),
       total_matches: h.total_matches,
     }))
     .sort((a, b) => b.total_matches - a.total_matches)
     .slice(0, 15);
 });
 
-// ====== 数据加载 ======
+function formatMatchDate(d) {
+  if (!d || d.length < 8) return d;
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+}
+
+function formatRune(rune) {
+  if (!rune || typeof rune !== 'object') return '';
+  return Object.values(rune)
+    .map((r) => `${r.name}×${r.totalnumber}`)
+    .join(' ');
+}
+
+function toggleDetail(heroName) {
+  expandedHero.value = expandedHero.value === heroName ? null : heroName;
+}
 
 async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [careerRes, leagueRes, nameMap] = await Promise.all([
-      getPlayerCareer(),
+    const [heroRes, leagueRes, nameMap, battlesRes] = await Promise.all([
+      getPlayerHeroSummary(DEFAULT_SEASON),
       getHeroWinRate(DEFAULT_SEASON),
       getSeasonNameMap(),
+      getPlayerHeroBattles(DEFAULT_SEASON).catch(() => null),
     ]);
 
-    // 从 career 数据中获取英雄列表
-    if (careerRes.code === 200 && careerRes.data?.hero_stats) {
-      heroStats.value = careerRes.data.hero_stats.map((h) => ({
-        hero_id: h.hero_id,
-        hero_name: h.hero_name,
-        total_matches: h.battles,
-        win_matches: h.wins,
-        win_rate: h.win_rate,
-      }));
+    if (heroRes.code === 200 && Array.isArray(heroRes.data)) {
+      heroStats.value = heroRes.data;
     }
 
-    // 联盟英雄胜率 — 筛选对抗路
     if (leagueRes.code === 200 && Array.isArray(leagueRes.data)) {
       leagueHeroes.value = leagueRes.data.filter((h) => h.position === '对抗路');
+    }
+
+    if (battlesRes) {
+      heroBattles.value = battlesRes.heroes || {};
     }
 
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
@@ -212,29 +248,23 @@ async function loadData() {
     await nextTick();
     setTimeout(() => {
       initBarChart();
-      if (compareData.value.length) {
-        initCompareChart();
-      }
+      if (compareData.value.length) initCompareChart();
     }, 50);
   }
 }
 
-// ====== Chart.js 图表 ======
-
 function initBarChart() {
   if (!barChartRef.value || !heroStatsSorted.value.length) return;
   if (barChart) barChart.destroy();
-
-  const top15 = heroStatsSorted.value.slice(0, 15);
-
+  const top = heroStatsSorted.value.slice(0, 15);
   barChart = new Chart(barChartRef.value, {
     type: 'bar',
     data: {
-      labels: top15.map((h) => h.hero_name),
+      labels: top.map((h) => h.hero_name),
       datasets: [
         {
           label: '使用次数',
-          data: top15.map((h) => h.total_matches),
+          data: top.map((h) => h.total_matches),
           backgroundColor: 'rgba(67, 97, 238, 0.7)',
           borderColor: '#4361ee',
           borderWidth: 1,
@@ -253,21 +283,18 @@ function initBarChart() {
           title: { display: true, text: '使用次数', font: { size: 12 } },
           grid: { color: 'rgba(0,0,0,0.04)' },
         },
-        y: {
-          grid: { display: false },
-          ticks: { font: { size: 12 } },
-        },
+        y: { grid: { display: false }, ticks: { font: { size: 12 } } },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
             label: (ctx) => {
-              const hero = top15[ctx.dataIndex];
+              const h = top[ctx.dataIndex];
               return [
-                `使用: ${hero.total_matches} 场`,
-                `胜场: ${hero.win_matches} / 负场: ${hero.total_matches - hero.win_matches}`,
-                `胜率: ${hero.win_rate}`,
+                `使用: ${h.total_matches} 场`,
+                `胜场: ${h.win_matches} / 负场: ${h.total_matches - h.win_matches}`,
+                `胜率: ${h.win_rate}`,
               ];
             },
           },
@@ -280,9 +307,7 @@ function initBarChart() {
 function initCompareChart() {
   if (!compareChartRef.value || !compareData.value.length) return;
   if (compareChart) compareChart.destroy();
-
   const data = compareData.value;
-
   compareChart = new Chart(compareChartRef.value, {
     type: 'bar',
     data: {
@@ -312,10 +337,7 @@ function initCompareChart() {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 11 }, maxRotation: 45 },
-        },
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } },
         y: {
           beginAtZero: true,
           max: 100,
@@ -324,18 +346,14 @@ function initCompareChart() {
         },
       },
       plugins: {
-        legend: {
-          position: 'top',
-          labels: { usePointStyle: true, padding: 16, font: { size: 12 } },
-        },
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
         tooltip: {
           callbacks: {
             label: (ctx) => {
               const d = data[ctx.dataIndex];
-              if (ctx.datasetIndex === 0) {
-                return `无言胜率: ${d.player_rate}% (${d.total_matches} 场)`;
-              }
-              return `联盟对抗路平均: ${d.league_rate}%`;
+              return ctx.datasetIndex === 0
+                ? `无言胜率: ${d.player_rate}% (${d.total_matches} 场)`
+                : `联盟对抗路平均: ${d.league_rate}%`;
             },
           },
         },
@@ -345,7 +363,6 @@ function initCompareChart() {
 }
 
 onMounted(() => loadData());
-
 onUnmounted(() => {
   barChart?.destroy();
   compareChart?.destroy();
@@ -354,7 +371,7 @@ onUnmounted(() => {
 
 <style scoped>
 .heroes-page {
-  /* padding: 20px; */
+  padding: 20px;
 }
 
 .chart-container {
@@ -364,19 +381,16 @@ onUnmounted(() => {
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
 }
-
 .chart-title {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--gray-700);
 }
-
 .bar-canvas {
   width: 100% !important;
   height: 420px !important;
 }
-
 .section-title {
   font-size: 16px;
   font-weight: 600;
@@ -384,6 +398,7 @@ onUnmounted(() => {
   color: var(--gray-700);
 }
 
+/* 表格 */
 .hero-table-section {
   background: var(--bg-card, #fff);
   border-radius: 12px;
@@ -391,24 +406,20 @@ onUnmounted(() => {
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
 }
-
 .hero-table-wrapper {
   overflow-x: auto;
 }
-
 .hero-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
-
 .hero-table th,
 .hero-table td {
   padding: 10px 12px;
   text-align: center;
   border-bottom: 1px solid var(--border-color, #f0f0f0);
 }
-
 .hero-table thead th {
   font-weight: 600;
   color: var(--gray-500);
@@ -416,31 +427,28 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
 }
-
 .hero-table tbody tr:hover {
   background: #f5f7ff;
 }
-
 .col-rank {
   width: 48px;
   color: var(--gray-400);
 }
-
 .col-hero {
   text-align: left !important;
   min-width: 120px;
 }
-
 .col-num {
   width: 72px;
 }
-
+.col-action {
+  width: 120px;
+}
 .hero-info {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .hero-avatar {
   width: 36px;
   height: 36px;
@@ -449,29 +457,124 @@ onUnmounted(() => {
   border: 2px solid #4361ee;
   flex-shrink: 0;
 }
-
 .hero-name {
   font-weight: 500;
   white-space: nowrap;
 }
-
 .text-success {
   color: var(--success-color);
   font-weight: 600;
 }
-
 .text-danger {
   color: var(--danger-color);
   font-weight: 600;
 }
+.detail-btn {
+  padding: 4px 10px;
+  border: 1px solid #4361ee;
+  background: transparent;
+  color: #4361ee;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.detail-btn:hover {
+  background: #4361ee;
+  color: #fff;
+}
+.no-data {
+  color: var(--gray-300);
+}
 
+/* 对局详情 */
+.battles-section {
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.battles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.battle-card {
+  border: 1px solid var(--border-color, #f0f0f0);
+  border-radius: 8px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--gray-300);
+}
+.battle-card.win {
+  border-left-color: var(--success-color);
+}
+.battle-card.lose {
+  border-left-color: var(--danger-color);
+}
+.battle-card.mvp {
+  background: rgba(255, 193, 7, 0.04);
+}
+.battle-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.battle-result {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.battle-result.win {
+  color: #fff;
+  background: var(--success-color);
+}
+.battle-result.lose {
+  color: #fff;
+  background: var(--danger-color);
+}
+.battle-mvp {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e67e22;
+}
+.battle-kda {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gray-800);
+}
+.battle-vs {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.battle-date {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-left: auto;
+}
+.battle-detail {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+.equip-label,
+.rune-label {
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+/* 加载/错误 */
 .loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 60px 0;
 }
-
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -480,24 +583,20 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 .loading-text {
   margin-top: 12px;
   color: var(--gray-400);
 }
-
 .error-message {
   text-align: center;
   padding: 40px 0;
   color: var(--danger-color);
 }
-
 .error-message .btn {
   margin-top: 12px;
   padding: 8px 24px;
@@ -526,6 +625,9 @@ onUnmounted(() => {
   .hero-table th,
   .hero-table td {
     padding: 8px 6px;
+  }
+  .battle-header {
+    gap: 8px;
   }
 }
 </style>

@@ -22,7 +22,7 @@
         <div class="player-overview-left">
           <div class="player-name-big">{{ statsData.player_name }}</div>
           <div class="player-meta">
-            {{ statsData.team_name }} · {{ statsData.player_position }} · {{ statsData.total_matches }}场
+            {{ statsData.team_name }} · {{ statsData.player_position }} · {{ statsData.total_matches }}小局
           </div>
         </div>
         <div class="player-overview-right">
@@ -212,10 +212,7 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [statsRes, nameMap] = await Promise.all([
-      getAllPlayerStats(DEFAULT_SEASON),
-      getSeasonNameMap(),
-    ]);
+    const [statsRes, nameMap] = await Promise.all([getAllPlayerStats(DEFAULT_SEASON), getSeasonNameMap()]);
     statsData.value = statsRes.data;
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {

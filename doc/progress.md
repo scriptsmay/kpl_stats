@@ -3,10 +3,11 @@
 ## 2026-03-30
 
 ### 项目现状
-- **数据平台** (frontend): Vue 3 + Vite，已上线 `data.kplwuyan.site`
-- **后端 API** (backend): FastAPI，包含 halo 代理 + 数据代理
+- **数据平台** (frontend): Vue 3 + Vite + Chart.js，已上线 `data.kplwuyan.site`
+- **后端 API** (backend): FastAPI（已拆分为 routers/services/config），包含 halo 代理 + 数据代理
 - **粉丝站** (homepage): 静态 HTML/CSS/JS，已上线 `kplwuyan.site`
 - **数据源**: kpl_data_daily GitHub Actions 每日抓取，JSON 文件托管在 GitHub
+- **数据抓取** (kpl_data_daily): 新增英雄对局详情二级抓取 `player-hero-battles`
 
 ### 当前功能
 - ✅ 生涯总览（总对局/胜率/KDA）
@@ -37,7 +38,7 @@
 | `components/Abilities.vue` | 能力雷达图(Chart.js) + 12 维能力条 + 位置对比(Chart.js) | ✅ |
 | `components/Ranking.vue` | 联盟排名(Chart.js雷达) + 排名卡片 | ✅ |
 | `components/RankCard.vue` | 排名卡片组件 | ✅ |
-| `components/Heroes.vue` | 英雄池分析（使用排行 + 胜率对比） | ✅ |
+| `components/Heroes.vue` | 英雄池分析（使用排行 + 胜率对比 + 对局详情） | ✅ |
 | `components/WinLose.vue` | 胜负对比（KDA/伤害/经济/洞察） | ✅ |
 | `components/CompareCard.vue` | 对比卡片组件 | ✅ |
 
@@ -59,6 +60,12 @@
 | `routers/halo.py` | 9 个 Halo 相关接口 |
 | `routers/player.py` | 13 个选手数据接口 |
 | `main.py` | 精简为 ~40 行入口 |
+
+##### 数据源适配：
+- `fetchData` 支持三种文件名格式：有赛季有日期 / 无赛季有日期 / 无赛季无日期（固定文件）
+- 赛季名称统一从 `seasons-list.json` 动态获取
+- `player-career-wuyan` 为无赛季文件，`getPlayerCareer()` 不传参
+- `player-hero-battles` 新增二级抓取（遍历英雄列表 × 逐英雄查询对局详情）
 
 ---
 

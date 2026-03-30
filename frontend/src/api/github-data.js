@@ -134,8 +134,11 @@ export const getAllPlayerStats = (season) => fetchData('all-player-stats', seaso
 /** 联盟英雄胜率（有赛季） */
 export const getHeroWinRate = (season) => fetchData('hero-win-rate', season);
 
-/** 选手英雄胜场统计（有赛季） */
+/** 选手英雄胜场统计（有赛季，返回数组） */
 export const getPlayerHeroSummary = (season) => fetchData('player-hero-summary', season);
+
+/** 英雄对局详情（有赛季，无日期取最新） */
+export const getPlayerHeroBattles = (season) => fetchData('player-hero-battles', season);
 
 /** 选手胜场数据（有赛季） */
 export const getPlayerWinStats = (season) => fetchData('player-win-stats', season);
