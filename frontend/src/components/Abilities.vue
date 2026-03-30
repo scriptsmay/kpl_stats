@@ -186,11 +186,12 @@ async function loadData() {
   error.value = null;
   try {
     const [abilitiesRes, nameMap] = await Promise.all([
-      getPlayerAbilities(DEFAULT_SEASON),
+      getPlayerAbilities(DEFAULT_SEASON).then((res) => (res.data && res.data[0]) || {}),
       getSeasonNameMap(),
     ]);
-    abilityData.value = abilitiesRes.data;
-    positionAverages.value = abilitiesRes.position_averages?.[abilitiesRes.data?.player_position] || null;
+    console.log('abilitiesRes:', abilitiesRes);
+    abilityData.value = abilitiesRes;
+    positionAverages.value = abilitiesRes.position_averages?.[abilitiesRes?.player_position] || null;
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载能力数据失败:', err);

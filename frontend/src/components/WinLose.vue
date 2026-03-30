@@ -190,8 +190,8 @@ async function loadData() {
       getPlayerLoseStats(DEFAULT_SEASON),
       getSeasonNameMap(),
     ]);
-    winData.value = winRes.data;
-    loseData.value = loseRes.data;
+    winData.value = (winRes.data && winRes.data[0]) || {};
+    loseData.value = (loseRes.data && loseRes.data[0]) || {};
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载胜负数据失败:', err);

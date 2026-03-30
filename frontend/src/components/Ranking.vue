@@ -213,7 +213,8 @@ async function loadData() {
   error.value = null;
   try {
     const [statsRes, nameMap] = await Promise.all([getAllPlayerStats(DEFAULT_SEASON), getSeasonNameMap()]);
-    statsData.value = statsRes.data;
+    const tmpList = statsRes.data || [];
+    statsData.value = tmpList.length ? tmpList[0] : null;
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载排名数据失败:', err);

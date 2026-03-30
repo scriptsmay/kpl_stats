@@ -9,7 +9,7 @@ import axios from 'axios';
 const GITHUB_PROXY = 'https://github.matishare.com/proxy/';
 const GITHUB_BASE = `${GITHUB_PROXY}https://raw.githubusercontent.com/scriptsmay/kpl_data_daily/main/data`;
 
-// 没有指定文件时读取目录列表
+// 目录列表也走代理
 const GITHUB_API_FILELIST = `https://api.github.com/repos/scriptsmay/kpl_data_daily/contents/data`;
 
 // localStorage 缓存键前缀
@@ -57,14 +57,15 @@ async function fetchData(namespace, season, date) {
 
   // 1. 检查缓存
   const cached = getLocalCache(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log(`从缓存中读取数据: ${cacheKey}`, cached);
+    return cached;
+  }
 
   // 2. 文件名
   let filename;
   if (date) {
-    filename = season
-      ? `${namespace}.${season}.${date}.json`
-      : `${namespace}.${date}.json`;
+    filename = season ? `${namespace}.${season}.${date}.json` : `${namespace}.${date}.json`;
   } else {
     // 通过 GitHub API 列出目录，找到最新的文件
     try {
@@ -174,9 +175,9 @@ export async function getSeasonNameMap() {
   if (seasonNameMap) return seasonNameMap;
   try {
     const res = await fetchData('seasons-list', '');
-    const list = Array.isArray(res) ? res : (res.data || []);
+    const list = Array.isArray(res) ? res : res.data || [];
     seasonNameMap = {};
-    list.forEach(s => {
+    list.forEach((s) => {
       seasonNameMap[s.tournament_id] = s.tournament_name;
     });
     return seasonNameMap;
