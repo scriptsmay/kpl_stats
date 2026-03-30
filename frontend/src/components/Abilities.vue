@@ -1,3 +1,7 @@
+<!--
+ * Abilities.vue - 选手能力画像页面
+ * 雷达图使用 Chart.js，柱状图使用 ECharts
+ -->
 <template>
   <div class="result-section abilities-page">
     <div class="result-header">
@@ -29,32 +33,20 @@
           <div class="rating-item">
             <span class="rating-value">{{ abilityData.overall_rank }}</span>
             <span class="rating-desc">联盟排名</span>
-            <!-- <span
-              v-if="abilityData.overall_rank_change"
-              :class="['rank-change', abilityData.overall_rank_trend === 'UP' ? 'up' : 'down']"
-            >
-              {{ abilityData.overall_rank_trend === 'UP' ? '↑' : '↓' }}{{ Math.abs(abilityData.overall_rank_change) }}
-            </span> -->
           </div>
           <div class="rating-item">
-            <span class="rating-value" :class="{ 'text-primary': abilityData.position_rank < 11 }">{{
-              abilityData.position_rank
-            }}</span>
+            <span class="rating-value" :class="{ 'text-primary': abilityData.position_rank < 11 }">
+              {{ abilityData.position_rank }}
+            </span>
             <span class="rating-desc">{{ abilityData.player_position }}排名</span>
-            <!-- <span
-              v-if="abilityData.position_rank_change"
-              :class="['rank-change', abilityData.position_rank_trend === 'UP' ? 'up' : 'down']"
-            >
-              {{ abilityData.position_rank_trend === 'UP' ? '↑' : '↓' }}{{ Math.abs(abilityData.position_rank_change) }}
-            </span> -->
           </div>
         </div>
       </div>
 
-      <!-- 雷达图 -->
+      <!-- 雷达图 (Chart.js) -->
       <div class="chart-container">
         <div class="chart-title">能力雷达图</div>
-        <div ref="radarChartRef" class="chart-box"></div>
+        <canvas ref="radarChartRef" class="radar-canvas"></canvas>
       </div>
 
       <!-- 能力维度详情 -->
@@ -81,19 +73,30 @@
         </div>
       </div>
 
-      <!-- 位置对比图 -->
+      <!-- 位置对比图 (Chart.js) -->
       <div class="chart-container">
         <div class="chart-title">vs {{ abilityData.player_position }}平均</div>
-        <div ref="compareChartRef" class="chart-box"></div>
+        <canvas ref="compareChartRef" class="compare-canvas"></canvas>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
-import * as echarts from 'echarts';
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import {
+  Chart,
+  RadarController, RadialLinearScale, LineElement, PointElement, Filler,
+  BarController, BarElement, CategoryScale, LinearScale,
+  Tooltip, Legend,
+} from 'chart.js';
 import { getPlayerAbilities, DEFAULT_SEASON } from '../api/github-data';
+
+// 注册 Chart.js 组件
+Chart.register(
+  RadarController, RadialLinearScale, LineElement, PointElement, Filler,
+  BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend
+);
 
 const loading = ref(false);
 const error = ref(null);
@@ -107,21 +110,20 @@ let compareChart = null;
 
 // 能力维度配置
 const DIMENSION_MAP = {
-  damage_output: { label: '输出能力', icon: '⚔️' },
-  teamfight: { label: '团战能力', icon: '🔥' },
-  initiation: { label: '开团能力', icon: '🎯' },
-  early_game: { label: '前期能力', icon: '🌅' },
-  mid_game: { label: '中期能力', icon: '☀️' },
-  late_game: { label: '后期能力', icon: '🌙' },
-  map_control: { label: '地图控制', icon: '🗺️' },
-  invasion_ability: { label: '入侵能力', icon: '🏴' },
-  support_ability: { label: '支援能力', icon: '🤝' },
-  economy: { label: '经济能力', icon: '💰' },
-  tankiness: { label: '抗伤能力', icon: '🛡️' },
-  durability: { label: '生存能力', icon: '❤️' },
+  damage_output: { label: '输出能力' },
+  teamfight: { label: '团战能力' },
+  initiation: { label: '开团能力' },
+  early_game: { label: '前期能力' },
+  mid_game: { label: '中期能力' },
+  late_game: { label: '后期能力' },
+  map_control: { label: '地图控制' },
+  invasion_ability: { label: '入侵能力' },
+  support_ability: { label: '支援能力' },
+  economy: { label: '经济能力' },
+  tankiness: { label: '抗伤能力' },
+  durability: { label: '生存能力' },
 };
 
-// 维度排序（雷达图用）
 const DIMENSION_ORDER = [
   'damage_output',
   'teamfight',
@@ -137,7 +139,6 @@ const DIMENSION_ORDER = [
   'durability',
 ];
 
-// 能力维度列表（用于柱状图展示）
 const abilityDimensions = computed(() => {
   if (!abilityData.value) return [];
   return DIMENSION_ORDER.map((key) => {
@@ -154,7 +155,6 @@ const abilityDimensions = computed(() => {
   });
 });
 
-// 颜色映射
 function getBarColor(value) {
   if (value >= 90) return 'linear-gradient(90deg, #ff6b6b, #ee5a24)';
   if (value >= 80) return 'linear-gradient(90deg, #feca57, #ff9f43)';
@@ -163,7 +163,6 @@ function getBarColor(value) {
   return 'linear-gradient(90deg, #c8d6e5, #8395a7)';
 }
 
-// 加载数据
 async function loadData() {
   loading.value = true;
   error.value = null;
@@ -176,7 +175,6 @@ async function loadData() {
     error.value = `加载失败：${err.message}`;
   } finally {
     loading.value = false;
-    // 等 DOM 渲染完成后再初始化图表
     await nextTick();
     setTimeout(() => {
       renderRadarChart();
@@ -185,167 +183,171 @@ async function loadData() {
   }
 }
 
-// 渲染雷达图
+// Chart.js 雷达图
 function renderRadarChart() {
   if (!radarChartRef.value || !abilityData.value) return;
 
-  if (radarChart) radarChart.dispose();
-  radarChart = echarts.init(radarChartRef.value);
+  if (radarChart) radarChart.destroy();
 
+  const labels = DIMENSION_ORDER.map((k) => DIMENSION_MAP[k].label);
   const playerValues = DIMENSION_ORDER.map((k) => abilityData.value[k] || 0);
   const avgValues = DIMENSION_ORDER.map((k) => positionAverages.value?.[k] || 0);
-  const indicators = DIMENSION_ORDER.map((k) => ({
-    name: DIMENSION_MAP[k].label,
-    max: 100,
-  }));
 
-  radarChart.setOption({
-    tooltip: {
-      trigger: 'item',
-      formatter: (params) => {
-        const lines = indicators.map((ind, i) => {
-          const pv = params.value[i];
-          const av = avgValues[i];
-          const diff = pv - av;
-          const sign = diff >= 0 ? '+' : '';
-          return `${ind.name}: ${pv} (均${av}, ${sign}${diff})`;
-        });
-        return `<strong>${params.name}</strong><br/>${lines.join('<br/>')}`;
-      },
+  radarChart = new Chart(radarChartRef.value, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: abilityData.value.player_name,
+          data: playerValues,
+          backgroundColor: 'rgba(67, 97, 238, 0.2)',
+          borderColor: '#4361ee',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#4361ee',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true,
+        },
+        {
+          label: `${abilityData.value.player_position}平均`,
+          data: avgValues,
+          backgroundColor: 'rgba(173, 181, 189, 0.1)',
+          borderColor: '#adb5bd',
+          borderWidth: 1.5,
+          borderDash: [5, 5],
+          pointBackgroundColor: '#adb5bd',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: true,
+        },
+      ],
     },
-    legend: {
-      data: [abilityData.value.player_name, `${abilityData.value.player_position}平均`],
-      bottom: 0,
-      textStyle: { fontSize: 14 },
-    },
-    radar: {
-      indicator: indicators,
-      radius: '76%',
-      center: ['50%', '48%'],
-      splitNumber: 10,
-      shape: 'polygon',
-      axisName: {
-        color: '#666',
-        fontSize: 11,
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 20,
+            font: { size: 10 },
+            color: '#999',
+            backdropColor: 'transparent',
+          },
+          pointLabels: {
+            font: { size: 12, weight: '500' },
+            color: '#555',
+          },
+          grid: {
+            color: 'rgba(0,0,0,0.06)',
+          },
+          angleLines: {
+            color: 'rgba(0,0,0,0.06)',
+          },
+        },
       },
-      splitArea: {
-        areaStyle: {
-          color: [
-            'rgba(30,60,114,0.01)',
-            'rgba(30,60,114,0.01)',
-            'rgba(30,60,114,0.01)',
-            'rgba(30,60,114,0.01)',
-            'rgba(30,60,114,0.01)',
-          ],
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+            font: { size: 13 },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const idx = ctx.dataIndex;
+              const pv = playerValues[idx];
+              const av = avgValues[idx];
+              const diff = pv - av;
+              const sign = diff >= 0 ? '+' : '';
+              return `${ctx.dataset.label}: ${ctx.raw} (均${av}, ${sign}${diff})`;
+            },
+          },
         },
       },
     },
-    series: [
-      {
-        type: 'radar',
-        data: [
-          {
-            value: playerValues,
-            name: abilityData.value.player_name,
-            symbol: 'circle',
-            symbolSize: 5,
-            lineStyle: { color: '#4361ee', width: 3 },
-            areaStyle: { color: 'rgba(42,82,152,0.25)' },
-            itemStyle: { color: '#4361ee' },
-          },
-          {
-            value: avgValues,
-            name: `${abilityData.value.player_position}平均`,
-            symbol: 'circle',
-            symbolSize: 3,
-            lineStyle: { color: '#adb5bd', width: 1, type: 'dashed' },
-            areaStyle: { color: 'rgba(173,181,189,0.1)' },
-            itemStyle: { color: '#adb5bd' },
-          },
-        ],
-      },
-    ],
   });
-
-  // 响应式
-  window.addEventListener('resize', () => radarChart?.resize());
 }
 
-// 渲染位置对比柱状图
+// Chart.js 柱状图（位置对比）
 function renderCompareChart() {
   if (!compareChartRef.value || !abilityData.value || !positionAverages.value) return;
-
-  if (compareChart) compareChart.dispose();
-  compareChart = echarts.init(compareChartRef.value);
+  if (compareChart) compareChart.destroy();
 
   const labels = DIMENSION_ORDER.map((k) => DIMENSION_MAP[k].label);
   const playerValues = DIMENSION_ORDER.map((k) => abilityData.value[k] || 0);
   const avgValues = DIMENSION_ORDER.map((k) => positionAverages.value[k] || 0);
 
-  compareChart.setOption({
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-    },
-    legend: {
-      data: [abilityData.value.player_name, '位置平均'],
-      bottom: 0,
-      textStyle: { fontSize: 14 },
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '12%',
-      top: '3%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'value',
-      max: 100,
-      axisLabel: { fontSize: 11 },
-    },
-    yAxis: {
-      type: 'category',
-      data: labels,
-      axisLabel: { fontSize: 11 },
-    },
-    series: [
-      {
-        name: abilityData.value.player_name,
-        type: 'bar',
-        data: playerValues,
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-            { offset: 0, color: '#4361ee' },
-            { offset: 1, color: '#2a5298' },
-          ]),
-          borderRadius: [0, 4, 4, 0],
+  compareChart = new Chart(compareChartRef.value, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: abilityData.value.player_name,
+          data: playerValues,
+          backgroundColor: 'rgba(67, 97, 238, 0.75)',
+          borderColor: '#4361ee',
+          borderWidth: 1,
+          borderRadius: 4,
         },
-        barGap: '10%',
-      },
-      {
-        name: '位置平均',
-        type: 'bar',
-        data: avgValues,
-        itemStyle: {
-          color: '#dee2e6',
-          borderRadius: [0, 4, 4, 0],
+        {
+          label: '位置平均',
+          data: avgValues,
+          backgroundColor: 'rgba(222, 226, 230, 0.8)',
+          borderColor: '#dee2e6',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          max: 100,
+          ticks: { font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } },
         },
       },
-    ],
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { usePointStyle: true, padding: 16, font: { size: 13 } },
+        },
+      },
+    },
   });
-
-  window.addEventListener('resize', () => compareChart?.resize());
 }
 
 onMounted(() => {
   loadData();
 });
+
+onUnmounted(() => {
+  radarChart?.destroy();
+  compareChart?.destroy();
+});
 </script>
 
 <style scoped>
 .abilities-page {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -396,7 +398,6 @@ onMounted(() => {
 .rating-value {
   font-size: var(--font-size-xxxl);
   font-weight: var(--font-weight-bold);
-  /* color: var(--gray-800); */
 }
 
 .rating-desc {
@@ -404,26 +405,8 @@ onMounted(() => {
   color: var(--gray-500);
 }
 
-.rating-total {
-  font-size: var(--font-size-sm);
-  color: var(--gray-400);
-}
-
-.rank-change {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.rank-change.up {
-  color: var(--success-color);
-  background: var(--success-bg);
-}
-
-.rank-change.down {
-  color: var(--danger-color);
-  background: var(--danger-bg);
+.text-primary {
+  color: var(--primary-medium);
 }
 
 .chart-container {
@@ -441,9 +424,14 @@ onMounted(() => {
   margin-bottom: var(--spacing-md);
 }
 
-.chart-box {
-  width: 100%;
-  height: 420px;
+.compare-canvas {
+  width: 100% !important;
+  height: 420px !important;
+}
+
+.radar-canvas {
+  width: 100% !important;
+  max-height: 420px;
 }
 
 .ability-bars {
@@ -539,6 +527,9 @@ onMounted(() => {
   }
   .chart-box {
     height: 350px;
+  }
+  .radar-canvas {
+    max-height: 350px;
   }
 }
 </style>

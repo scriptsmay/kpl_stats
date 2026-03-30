@@ -10,7 +10,7 @@ const GITHUB_PROXY = 'https://github.matishare.com/proxy/';
 const GITHUB_BASE = `${GITHUB_PROXY}https://raw.githubusercontent.com/scriptsmay/kpl_data_daily/main/data`;
 
 // 没有指定文件时读取目录列表
-const GITHUB_API_FILELIST = `${GITHUB_PROXY}https://api.github.com/repos/scriptsmay/kpl_data_daily/contents/data`;
+const GITHUB_API_FILELIST = `https://api.github.com/repos/scriptsmay/kpl_data_daily/contents/data`;
 
 // localStorage 缓存键前缀
 const CACHE_PREFIX = 'kpl_data_';
@@ -53,7 +53,10 @@ async function fetchData(namespace, season, date) {
 
   // 1. 检查缓存
   const cached = getLocalCache(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log(`[${cacheKey}]读取缓存:`, cached);
+    return cached;
+  }
 
   // 2. 如果没有指定日期，先查 GitHub 目录找最新文件
   let filename;

@@ -26,16 +26,16 @@
 #### 2. 前端数据展示增强
 - 目标：基于 kpl_data_daily 数据源建设可视化页面
 - 数据源：`https://raw.githubusercontent.com/scriptsmay/kpl_data_daily/main/data/`
-- 技术方案：前端直接从 GitHub raw 获取 + ECharts 图表 + localStorage 缓存
-- 新增依赖：`echarts`
+- 技术方案：前端直接从 GitHub raw 获取 + Chart.js 图表 + localStorage 缓存
+- 依赖：`chart.js`（已移除 `echarts`）
 - 状态：✅ 全部完成
 
 ##### 新增文件：
 | 文件 | 用途 | 状态 |
 |------|------|------|
 | `api/github-data.js` | GitHub 数据源 API 模块（localStorage 缓存） | ✅ |
-| `components/Abilities.vue` | 能力雷达图 + 12 维能力条 + 位置对比 | ✅ |
-| `components/Ranking.vue` | 联盟排名（百分位雷达 + 排名卡片） | ✅ |
+| `components/Abilities.vue` | 能力雷达图(Chart.js) + 12 维能力条 + 位置对比(Chart.js) | ✅ |
+| `components/Ranking.vue` | 联盟排名(Chart.js雷达) + 排名卡片 | ✅ |
 | `components/RankCard.vue` | 排名卡片组件 | ✅ |
 | `components/Heroes.vue` | 英雄池分析（使用排行 + 胜率对比） | ✅ |
 | `components/WinLose.vue` | 胜负对比（KDA/伤害/经济/洞察） | ✅ |
@@ -65,4 +65,3 @@
 ## 待办
 - [ ] 更新 README 文档
 - [ ] 生产环境部署测试
-- [ ] ECharts 动态 import 拆包（减少主 bundle 体积）

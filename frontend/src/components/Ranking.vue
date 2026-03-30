@@ -21,7 +21,9 @@
       <div class="player-overview-card">
         <div class="player-overview-left">
           <div class="player-name-big">{{ statsData.player_name }}</div>
-          <div class="player-meta">{{ statsData.team_name }} · {{ statsData.player_position }} · {{ statsData.total_matches }}场</div>
+          <div class="player-meta">
+            {{ statsData.team_name }} · {{ statsData.player_position }} · {{ statsData.total_matches }}场
+          </div>
         </div>
         <div class="player-overview-right">
           <div class="overview-stat">
@@ -39,22 +41,43 @@
         </div>
       </div>
 
-      <!-- 排名雷达图 -->
+      <!-- 排名雷达图 (Chart.js) -->
       <div class="chart-container">
         <div class="chart-title">核心指标排名百分位</div>
         <div class="chart-hint">数值越高表示排名越靠前（百分位）</div>
-        <div ref="rankRadarRef" class="chart-box"></div>
+        <canvas ref="rankRadarRef" class="radar-canvas"></canvas>
       </div>
 
       <!-- KDA 数据 -->
       <div class="ranking-section">
         <div class="section-title">⚔️ KDA 数据</div>
         <div class="ranking-cards">
-          <RankCard label="场均击杀" :value="statsData.avg_kills" :rank="statsData.avg_kill_rank" :total="totalPlayers" />
-          <RankCard label="场均死亡" :value="statsData.avg_deaths" :rank="statsData.avg_death_rank" :total="totalPlayers" reverse />
-          <RankCard label="场均助攻" :value="statsData.avg_assists" :rank="statsData.avg_assist_rank" :total="totalPlayers" />
-          <RankCard label="KDA" :value="statsData.kda_ratio" :rank="statsData.kda_rank" :total="totalPlayers" />
-          <RankCard label="参团率" :value="statsData.avg_kill_participation" :rank="statsData.avg_kill_participation_rank" :total="totalPlayers" />
+          <RankCard
+            label="场均击杀"
+            :value="statsData.avg_kills"
+            :rank="statsData.avg_kills_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="场均死亡"
+            :value="statsData.avg_deaths"
+            :rank="statsData.avg_deaths_rank"
+            :total="totalPlayers"
+            reverse
+          />
+          <RankCard
+            label="场均助攻"
+            :value="statsData.avg_assists"
+            :rank="statsData.avg_assists_rank"
+            :total="totalPlayers"
+          />
+          <RankCard label="KDA" :value="statsData.kda_ratio" :rank="statsData.kda_ratio_rank" :total="totalPlayers" />
+          <RankCard
+            label="参团率"
+            :value="statsData.avg_kill_participation"
+            :rank="statsData.avg_kill_participation_rank"
+            :total="totalPlayers"
+          />
         </div>
       </div>
 
@@ -62,11 +85,36 @@
       <div class="ranking-section">
         <div class="section-title">🔥 伤害数据</div>
         <div class="ranking-cards">
-          <RankCard label="每分钟伤害" :value="statsData.damage_per_minute" :rank="statsData.damage_per_minute_rank" :total="totalPlayers" />
-          <RankCard label="伤害占比" :value="statsData.damage_share" :rank="statsData.damage_share_rank" :total="totalPlayers" />
-          <RankCard label="每分钟承伤" :value="statsData.damage_taken_per_minute" :rank="statsData.damage_taken_per_minute_rank" :total="totalPlayers" />
-          <RankCard label="承伤占比" :value="statsData.damage_taken_share" :rank="statsData.damage_taken_share_rank" :total="totalPlayers" />
-          <RankCard label="每次死亡伤害" :value="statsData.damage_per_death" :rank="statsData.damage_per_death_rank" :total="totalPlayers" />
+          <RankCard
+            label="每分钟伤害"
+            :value="statsData.damage_per_minute"
+            :rank="statsData.damage_per_minute_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="伤害占比"
+            :value="statsData.damage_share"
+            :rank="statsData.damage_share_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="每分钟承伤"
+            :value="statsData.damage_taken_per_minute"
+            :rank="statsData.damage_taken_per_minute_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="承伤占比"
+            :value="statsData.damage_taken_share"
+            :rank="statsData.damage_taken_share_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="每次死亡伤害"
+            :value="statsData.damage_per_death"
+            :rank="statsData.damage_per_death_rank"
+            :total="totalPlayers"
+          />
         </div>
       </div>
 
@@ -74,9 +122,24 @@
       <div class="ranking-section">
         <div class="section-title">💰 经济数据</div>
         <div class="ranking-cards">
-          <RankCard label="每分钟经济" :value="statsData.economy_per_minute" :rank="statsData.economy_per_minute_rank" :total="totalPlayers" />
-          <RankCard label="经济占比" :value="statsData.economy_share" :rank="statsData.economy_share_rank" :total="totalPlayers" />
-          <RankCard label="经济转化率" :value="statsData.avg_economy_to_damage" :rank="statsData.avg_economy_to_damage_rank" :total="totalPlayers" />
+          <RankCard
+            label="每分钟经济"
+            :value="statsData.economy_per_minute"
+            :rank="statsData.economy_per_minute_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="经济占比"
+            :value="statsData.economy_share"
+            :rank="statsData.economy_share_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="经济转化率"
+            :value="statsData.avg_economy_to_damage"
+            :rank="statsData.avg_economy_to_damage_rank"
+            :total="totalPlayers"
+          />
         </div>
       </div>
 
@@ -84,9 +147,24 @@
       <div class="ranking-section">
         <div class="section-title">🐉 资源控制</div>
         <div class="ranking-cards">
-          <RankCard label="主宰控制率" :value="statsData.master_control_rate" :rank="statsData.master_control_rate_rank" :total="totalPlayers" />
-          <RankCard label="暴君控制率" :value="statsData.baron_control_rate" :rank="statsData.baron_control_rate_rank" :total="totalPlayers" />
-          <RankCard label="中立资源控制率" :value="statsData.neutral_resource_control_rate" :rank="statsData.neutral_resource_control_rate_rank" :total="totalPlayers" />
+          <RankCard
+            label="主宰控制率"
+            :value="statsData.master_control_rate"
+            :rank="statsData.master_control_rate_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="暴君控制率"
+            :value="statsData.baron_control_rate"
+            :rank="statsData.baron_control_rate_rank"
+            :total="totalPlayers"
+          />
+          <RankCard
+            label="中立资源控制率"
+            :value="statsData.neutral_resource_control_rate"
+            :rank="statsData.neutral_resource_control_rate_rank"
+            :total="totalPlayers"
+          />
         </div>
       </div>
     </div>
@@ -94,10 +172,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
-import * as echarts from 'echarts';
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import {
+  Chart,
+  RadarController,
+  RadialLinearScale,
+  LineElement,
+  PointElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { getAllPlayerStats, DEFAULT_SEASON } from '../api/github-data';
 import RankCard from './RankCard.vue';
+
+// 注册 Chart.js 组件
+Chart.register(RadarController, RadialLinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
 
 const loading = ref(false);
 const error = ref(null);
@@ -109,14 +199,13 @@ const seasonName = '2026 春季赛';
 
 const totalPlayers = computed(() => statsData.value?.total_players || 114);
 
-// 核心排名指标
 const RANK_INDICATORS = [
   { key: 'avg_kill_participation_rank', label: '参团率' },
   { key: 'damage_per_minute_rank', label: '分均伤害' },
   { key: 'damage_per_death_rank', label: '每次死亡伤害' },
   { key: 'economy_per_minute_rank', label: '分均经济' },
   { key: 'avg_economy_to_damage_rank', label: '经济转化' },
-  { key: 'kda_rank', label: 'KDA' },
+  { key: 'kda_ratio_rank', label: 'KDA' },
 ];
 
 async function loadData() {
@@ -135,76 +224,94 @@ async function loadData() {
   }
 }
 
+// Chart.js 雷达图
 function renderRankRadar() {
   if (!rankRadarRef.value || !statsData.value) return;
 
-  if (rankChart) rankChart.dispose();
-  rankChart = echarts.init(rankRadarRef.value);
+  if (rankChart) rankChart.destroy();
 
   const total = totalPlayers.value;
-  const indicators = RANK_INDICATORS.map(r => ({ name: r.label, max: 100 }));
-  // 转换排名为百分位（排名越小越好）
-  const values = RANK_INDICATORS.map(r => {
+  const labels = RANK_INDICATORS.map((r) => r.label);
+  const values = RANK_INDICATORS.map((r) => {
     const rank = statsData.value[r.key];
     if (!rank) return 0;
     return Math.round(((total - rank) / total) * 100);
   });
 
-  rankChart.setOption({
-    tooltip: {
-      formatter: (params) => {
-        return RANK_INDICATORS.map((r, i) => {
-          const rank = statsData.value[r.key] || '-';
-          return `${r.label}: #${rank} / ${total}`;
-        }).join('<br/>');
-      },
-    },
-    radar: {
-      indicator: indicators,
-      radius: '60%',
-      center: ['50%', '50%'],
-      splitNumber: 4,
-      shape: 'polygon',
-      axisName: { color: '#666', fontSize: 11 },
-      splitArea: {
-        areaStyle: {
-          color: ['rgba(30,60,114,0.02)', 'rgba(30,60,114,0.05)', 'rgba(30,60,114,0.08)', 'rgba(30,60,114,0.12)'],
+  rankChart = new Chart(rankRadarRef.value, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: statsData.value.player_name,
+          data: values,
+          backgroundColor: 'rgba(67, 97, 238, 0.2)',
+          borderColor: '#4361ee',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#4361ee',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: true,
         },
-      },
+      ],
     },
-    series: [{
-      type: 'radar',
-      data: [{
-        value: values,
-        name: statsData.value.player_name,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: { color: '#2a5298', width: 2 },
-        areaStyle: { color: 'rgba(42,82,152,0.25)' },
-        itemStyle: { color: '#2a5298' },
-        label: {
-          show: true,
-          formatter: (p) => {
-            const rank = statsData.value[RANK_INDICATORS[p.dataIndex].key];
-            return `#${rank}`;
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 25,
+            font: { size: 10 },
+            color: '#999',
+            backdropColor: 'transparent',
           },
-          position: 'top',
-          fontSize: 10,
-          color: '#2a5298',
+          pointLabels: {
+            font: { size: 12, weight: '500' },
+            color: '#555',
+          },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          angleLines: { color: 'rgba(0,0,0,0.06)' },
         },
-      }],
-    }],
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+            font: { size: 13 },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const indicator = RANK_INDICATORS[ctx.dataIndex];
+              const rank = statsData.value[indicator.key] || '-';
+              return `${indicator.label}: #${rank} / ${total}（百分位 ${ctx.raw}%）`;
+            },
+          },
+        },
+      },
+    },
   });
-
-  window.addEventListener('resize', () => rankChart?.resize());
 }
 
 onMounted(() => loadData());
+
+onUnmounted(() => {
+  rankChart?.destroy();
+});
 </script>
 
 <style scoped>
 .ranking-page {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -277,9 +384,9 @@ onMounted(() => loadData());
   margin-bottom: var(--spacing-sm);
 }
 
-.chart-box {
-  width: 100%;
-  height: 400px;
+.radar-canvas {
+  width: 100% !important;
+  max-height: 400px;
 }
 
 .ranking-section {
@@ -308,8 +415,8 @@ onMounted(() => loadData());
   .player-overview-right {
     gap: 20px;
   }
-  .chart-box {
-    height: 300px;
+  .radar-canvas {
+    max-height: 300px;
   }
 }
 </style>

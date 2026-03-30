@@ -2,15 +2,21 @@
   <div class="app-wrapper">
     <nav class="main-nav">
       <div class="nav-content">
-        <h1 class="nav-title">KPL选手数据 - 无言（赵昊宇）</h1>
-        <div class="nav-links">
-          <router-link to="/" class="nav-link">生涯数据</router-link>
-          <router-link to="/abilities" class="nav-link">能力画像</router-link>
-          <router-link to="/ranking" class="nav-link">联盟排名</router-link>
-          <router-link to="/heroes" class="nav-link">英雄池</router-link>
-          <router-link to="/win-lose" class="nav-link">胜负对比</router-link>
-          <router-link to="/records" class="nav-link">比赛记录</router-link>
-          <router-link to="/admin" class="nav-link admin-link hide">数据管理</router-link>
+        <div class="nav-header">
+          <h1 class="nav-title">KPL选手数据 - 无言</h1>
+          <button class="nav-toggle" @click="menuOpen = !menuOpen" :class="{ open: menuOpen }">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+        <div class="nav-links" :class="{ show: menuOpen }">
+          <router-link to="/" class="nav-link" @click="menuOpen = false">生涯数据</router-link>
+          <router-link to="/abilities" class="nav-link" @click="menuOpen = false">能力画像</router-link>
+          <router-link to="/ranking" class="nav-link" @click="menuOpen = false">联盟排名</router-link>
+          <router-link to="/heroes" class="nav-link" @click="menuOpen = false">英雄池</router-link>
+          <router-link to="/win-lose" class="nav-link" @click="menuOpen = false">胜负对比</router-link>
+          <router-link to="/records" class="nav-link" @click="menuOpen = false">比赛记录</router-link>
         </div>
       </div>
     </nav>
@@ -34,5 +40,13 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import BackToTop from './components/BackToTop.vue';
+
+const menuOpen = ref(false);
+const route = useRoute();
+
+// 路由切换时关闭菜单
+watch(() => route.path, () => { menuOpen.value = false; });
 </script>

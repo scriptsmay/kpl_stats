@@ -1,3 +1,7 @@
+<!--
+ * WinLose.vue - 胜负对比分析页面
+ * 图表使用 Chart.js
+ -->
 <template>
   <div class="result-section winlose-page">
     <div class="result-header">
@@ -31,7 +35,7 @@
       <div class="compare-section">
         <div class="section-title">🔥 伤害对比</div>
         <div class="chart-container">
-          <div ref="damageChartRef" class="chart-box"></div>
+          <canvas ref="damageChartRef" class="chart-canvas"></canvas>
         </div>
       </div>
 
@@ -39,7 +43,7 @@
       <div class="compare-section">
         <div class="section-title">💰 经济对比</div>
         <div class="chart-container">
-          <div ref="economyChartRef" class="chart-box"></div>
+          <canvas ref="economyChartRef" class="chart-canvas"></canvas>
         </div>
       </div>
 
@@ -93,10 +97,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
-import * as echarts from 'echarts';
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import {
+  Chart, BarController, BarElement, CategoryScale, LinearScale,
+  Tooltip, Legend
+} from 'chart.js';
 import { getPlayerWinStats, getPlayerLoseStats, DEFAULT_SEASON } from '../api/github-data';
 import CompareCard from './CompareCard.vue';
+
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const loading = ref(false);
 const error = ref(null);
@@ -108,31 +117,29 @@ const economyChartRef = ref(null);
 let damageChart = null;
 let economyChart = null;
 
-// 关键洞察
 const insights = computed(() => {
   if (!winData.value || !loseData.value) return [];
   const w = winData.value;
   const l = loseData.value;
   const result = [];
 
-  // KDA 差异
   const kdaDiff = ((w.avg_kda || 0) - (l.avg_kda || 0)).toFixed(1);
   if (kdaDiff > 0) {
     result.push({ icon: '📈', text: `获胜时 KDA 比失败时高 ${kdaDiff}，稳定性是关键` });
   }
 
-  // 死亡差异
   const deathDiff = ((l.avg_deaths || 0) - (w.avg_deaths || 0)).toFixed(1);
   if (deathDiff > 0.5) {
     result.push({ icon: '💀', text: `失败时场均死亡多 ${deathDiff} 次，减少失误能显著提升胜率` });
   }
 
-  // 10 分钟经济差
   if ((w.avg_economy_diff_10min || 0) > 0 && (l.avg_economy_diff_10min || 0) < 0) {
-    result.push({ icon: '💰', text: `获胜时 10 分钟经济领先 ${Math.round(w.avg_economy_diff_10min)}，失败时经济落后 ${Math.round(Math.abs(l.avg_economy_diff_10min))}` });
+    result.push({
+      icon: '💰',
+      text: `获胜时 10 分钟经济领先 ${Math.round(w.avg_economy_diff_10min)}，失败时经济落后 ${Math.round(Math.abs(l.avg_economy_diff_10min))}`,
+    });
   }
 
-  // 团战伤害
   const fightDiff = ((w.avg_big_fight_damage || 0) - (l.avg_big_fight_damage || 0)).toFixed(0);
   if (fightDiff > 0) {
     result.push({ icon: '🔥', text: `获胜时大型团战平均伤害多 ${Number(fightDiff).toLocaleString()}，团战表现直接影响胜负` });
@@ -170,92 +177,147 @@ async function loadData() {
 
 function renderDamageChart() {
   if (!damageChartRef.value || !winData.value || !loseData.value) return;
-  if (damageChart) damageChart.dispose();
-  damageChart = echarts.init(damageChartRef.value);
+  if (damageChart) damageChart.destroy();
 
-  const categories = ['场均英雄伤害', '场均承伤', '场均治疗量', '团战平均伤害', '团战平均承伤'];
-  const winValues = [
-    winData.value.avg_hurt_to_hero || 0,
-    winData.value.avg_be_hurt_by_hero || 0,
-    winData.value.avg_heal_count || 0,
-    winData.value.avg_big_fight_damage || 0,
-    winData.value.avg_big_fight_damage_taken || 0,
-  ];
-  const loseValues = [
-    loseData.value.avg_hurt_to_hero || 0,
-    loseData.value.avg_be_hurt_by_hero || 0,
-    loseData.value.avg_heal_count || 0,
-    loseData.value.avg_big_fight_damage || 0,
-    loseData.value.avg_big_fight_damage_taken || 0,
-  ];
+  const labels = ['场均英雄伤害', '场均承伤', '场均治疗量', '团战平均伤害', '团战平均承伤'];
 
-  damageChart.setOption({
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (params) => {
-        return params.map(p => `${p.seriesName}: ${p.value.toLocaleString()}`).join('<br/>');
+  damageChart = new Chart(damageChartRef.value, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '胜利',
+          data: [
+            winData.value.avg_hurt_to_hero || 0,
+            winData.value.avg_be_hurt_by_hero || 0,
+            winData.value.avg_heal_count || 0,
+            winData.value.avg_big_fight_damage || 0,
+            winData.value.avg_big_fight_damage_taken || 0,
+          ],
+          backgroundColor: 'rgba(40, 167, 69, 0.75)',
+          borderColor: '#28a745',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: '失败',
+          data: [
+            loseData.value.avg_hurt_to_hero || 0,
+            loseData.value.avg_be_hurt_by_hero || 0,
+            loseData.value.avg_heal_count || 0,
+            loseData.value.avg_big_fight_damage || 0,
+            loseData.value.avg_big_fight_damage_taken || 0,
+          ],
+          backgroundColor: 'rgba(220, 53, 69, 0.75)',
+          borderColor: '#dc3545',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: (v) => (v / 1000).toFixed(0) + 'k',
+            font: { size: 11 },
+          },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 12 } } },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { usePointStyle: true, padding: 16, font: { size: 12 } },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}`,
+          },
+        },
       },
     },
-    legend: { data: ['胜利', '失败'], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '12%', top: '3%', containLabel: true },
-    xAxis: {
-      type: 'value',
-      axisLabel: { formatter: v => (v / 1000).toFixed(0) + 'k', fontSize: 11 },
-    },
-    yAxis: { type: 'category', data: categories, axisLabel: { fontSize: 11 } },
-    series: [
-      {
-        name: '胜利',
-        type: 'bar',
-        data: winValues,
-        itemStyle: { color: '#28a745', borderRadius: [0, 4, 4, 0] },
-      },
-      {
-        name: '失败',
-        type: 'bar',
-        data: loseValues,
-        itemStyle: { color: '#dc3545', borderRadius: [0, 4, 4, 0] },
-      },
-    ],
   });
-  window.addEventListener('resize', () => damageChart?.resize());
 }
 
 function renderEconomyChart() {
   if (!economyChartRef.value || !winData.value || !loseData.value) return;
-  if (economyChart) economyChart.dispose();
-  economyChart = echarts.init(economyChartRef.value);
+  if (economyChart) economyChart.destroy();
 
-  const categories = ['场均经济', '10分钟经济', '10分钟经济差', '分均经济(×100)'];
-  const winValues = [
-    winData.value.avg_gold || 0,
-    winData.value.avg_economy_10min || 0,
-    winData.value.avg_economy_diff_10min || 0,
-    (winData.value.avg_gold || 0) / ((winData.value.avg_game_duration || 600) / 60),
-  ];
-  const loseValues = [
-    loseData.value.avg_gold || 0,
-    loseData.value.avg_economy_10min || 0,
-    loseData.value.avg_economy_diff_10min || 0,
-    (loseData.value.avg_gold || 0) / ((loseData.value.avg_game_duration || 600) / 60),
-  ];
+  const labels = ['场均经济', '10分钟经济', '10分钟经济差', '分均经济'];
 
-  economyChart.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { data: ['胜利', '失败'], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '12%', top: '3%', containLabel: true },
-    xAxis: { type: 'value', axisLabel: { fontSize: 11 } },
-    yAxis: { type: 'category', data: categories, axisLabel: { fontSize: 11 } },
-    series: [
-      { name: '胜利', type: 'bar', data: winValues, itemStyle: { color: '#28a745', borderRadius: [0, 4, 4, 0] } },
-      { name: '失败', type: 'bar', data: loseValues, itemStyle: { color: '#dc3545', borderRadius: [0, 4, 4, 0] } },
-    ],
+  economyChart = new Chart(economyChartRef.value, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '胜利',
+          data: [
+            winData.value.avg_gold || 0,
+            winData.value.avg_economy_10min || 0,
+            winData.value.avg_economy_diff_10min || 0,
+            Math.round((winData.value.avg_gold || 0) / ((winData.value.avg_game_duration || 600) / 60)),
+          ],
+          backgroundColor: 'rgba(40, 167, 69, 0.75)',
+          borderColor: '#28a745',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: '失败',
+          data: [
+            loseData.value.avg_gold || 0,
+            loseData.value.avg_economy_10min || 0,
+            loseData.value.avg_economy_diff_10min || 0,
+            Math.round((loseData.value.avg_gold || 0) / ((loseData.value.avg_game_duration || 600) / 60)),
+          ],
+          backgroundColor: 'rgba(220, 53, 69, 0.75)',
+          borderColor: '#dc3545',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 12 } } },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { usePointStyle: true, padding: 16, font: { size: 12 } },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}`,
+          },
+        },
+      },
+    },
   });
-  window.addEventListener('resize', () => economyChart?.resize());
 }
 
 onMounted(() => loadData());
+
+onUnmounted(() => {
+  damageChart?.destroy();
+  economyChart?.destroy();
+});
 </script>
 
 <style scoped>
@@ -288,9 +350,9 @@ onMounted(() => loadData());
   box-shadow: var(--shadow-sm);
 }
 
-.chart-box {
-  width: 100%;
-  height: 350px;
+.chart-canvas {
+  width: 100% !important;
+  height: 320px !important;
 }
 
 .insight-cards {
@@ -322,11 +384,7 @@ onMounted(() => loadData());
 }
 
 @media (max-width: 768px) {
-  .compare-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .chart-box {
-    height: 280px;
-  }
+  .compare-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-canvas { height: 260px !important; }
 }
 </style>

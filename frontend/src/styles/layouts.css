@@ -1,7 +1,9 @@
 /* 布局样式 */
+
 .hide {
   display: none;
 }
+
 /* 应用包装器 */
 .app-wrapper {
   background: var(--bg-gradient);
@@ -12,7 +14,6 @@
 /* 主导航 */
 .main-nav {
   background: var(--primary-gradient);
-  padding: var(--spacing-md) 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: var(--border-radius-xxl) var(--border-radius-xxl) 0 0;
   max-width: 1400px;
@@ -22,7 +23,10 @@
 .nav-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.nav-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -34,20 +38,59 @@
   color: var(--white);
   font-weight: var(--font-weight-semibold);
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 汉堡按钮 - 桌面端隐藏 */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 100;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* 汉堡动画 */
+.nav-toggle.open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+.nav-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* 导航链接 */
 .nav-links {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius-md);
   transition: all var(--transition-base);
   font-size: var(--font-size-base);
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -59,10 +102,6 @@
   background: rgba(255, 255, 255, 0.3);
   color: var(--white);
   font-weight: var(--font-weight-medium);
-}
-
-.admin-link {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 /* 主内容区 */
@@ -96,6 +135,7 @@
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-bold);
 }
+
 .result-subtitle {
   color: var(--gray-500);
   font-size: var(--font-size-md);
@@ -119,7 +159,7 @@
   color: var(--gray-600);
   font-size: var(--font-size-sm);
   margin: 0 0 var(--spacing-md) 0;
-  line-height: var(--line-height-relaxed);
+  line-height: 1.6;
   padding: var(--spacing-md);
   background: rgba(255, 193, 7, 0.1);
   border-left: 3px solid var(--warning-color);
@@ -132,39 +172,64 @@
   margin: 0;
 }
 
-/* 响应式 */
+/* ========== 响应式 ========== */
+
 @media (max-width: 768px) {
   .app-wrapper {
     padding: var(--spacing-sm);
-    border-radius: var(--border-radius-md);
   }
 
   .main-nav {
     border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
-    padding: var(--spacing-sm) 0;
   }
 
   .nav-content {
-    padding: 0 var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .nav-title {
-    font-size: var(--font-size-xxl);
+    font-size: var(--font-size-xl);
+  }
+
+  /* 显示汉堡按钮 */
+  .nav-toggle {
+    display: flex;
+  }
+
+  /* 导航链接：移动端默认隐藏，展开时显示为垂直列表 */
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .nav-links.show {
+    display: flex;
   }
 
   .nav-link {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--font-size-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    border-radius: var(--border-radius-sm);
+  }
+
+  .nav-link.router-link-active {
+    background: rgba(255, 255, 255, 0.25);
   }
 
   .result-section {
-    padding: var(--spacing-lg) var(--spacing-sm);
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 
   .result-header {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
   }
 
   .result-title {
@@ -172,11 +237,19 @@
   }
 
   .app-footer {
-    padding: var(--spacing-md) var(--spacing-sm);
+    border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+    padding: var(--spacing-md);
   }
 
   .disclaimer {
     font-size: var(--font-size-xs);
     padding: var(--spacing-sm);
+  }
+}
+
+/* 超小屏适配 */
+@media (max-width: 360px) {
+  .nav-title {
+    font-size: var(--font-size-lg);
   }
 }
