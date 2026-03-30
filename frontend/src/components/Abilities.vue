@@ -185,13 +185,11 @@ async function loadData() {
   loading.value = true;
   error.value = null;
   try {
-    const [abilitiesRes, nameMap] = await Promise.all([
-      getPlayerAbilities(DEFAULT_SEASON).then((res) => (res.data && res.data[0]) || {}),
-      getSeasonNameMap(),
-    ]);
+    const [abilitiesRes, nameMap] = await Promise.all([getPlayerAbilities(DEFAULT_SEASON), getSeasonNameMap()]);
     console.log('abilitiesRes:', abilitiesRes);
-    abilityData.value = abilitiesRes;
-    positionAverages.value = abilitiesRes.position_averages?.[abilitiesRes?.player_position] || null;
+    const playerData = (abilitiesRes.data && abilitiesRes.data[0]) || {};
+    abilityData.value = playerData;
+    positionAverages.value = abilitiesRes.position_averages?.[playerData?.player_position] || null;
     seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
   } catch (err) {
     console.error('加载能力数据失败:', err);
