@@ -72,20 +72,8 @@ kpl_stats/
 │           ├── layouts.css      # 布局样式
 │           ├── pages.css        # 页面样式
 │           └── admin.css        # 管理面板样式
-├── homepage/                # 粉丝应援站（静态页面）
-│   ├── index.html           # 主页面
-│   ├── config.js            # 环境配置（需手动创建）
-│   ├── config.example.js    # 配置模板
-│   ├── favicon.svg          # 网站图标
-│   └── assets/
-│       ├── css/
-│       │   └── style.css    # 样式文件
-│       ├── js/
-│       │   └── index.js     # 主脚本
-│       └── lib/             # 第三方库
 ├── doc/                     # 项目文档
 │   ├── halo-api-proxy.md    # Halo API 代理配置指南
-│   ├── homepage-config.md   # 粉丝应援站配置指南
 │   └── project.md           # 项目详细文档
 ├── openresty/               # OpenResty 配置
 │   └── conf.d/
@@ -98,6 +86,8 @@ kpl_stats/
 ├── README.md
 └── docker-compose.yml       # Docker Compose 配置
 ```
+
+> **注意**: 粉丝应援站（homepage）静态页面已迁移至独立仓库 [wuyan-site](https://github.com/scriptsmay/wuyan-site)，由 Vercel 部署。
 
 ## 快速开始
 
@@ -145,33 +135,20 @@ npm run dev
 
 ### 粉丝应援站
 
-```bash
-# 进入 homepage 目录
-cd homepage
+粉丝应援站静态页面已迁移至独立仓库 [wuyan-site](https://github.com/scriptsmay/wuyan-site)，由 Vercel 部署。
 
-# 创建配置文件
-cp config.example.js config.js
-
-# 修改 config.js 中的 API_BASE_URL
-# 开发环境：http://localhost:8001
-# 生产环境：https://data.kplwuyan.site/api
-
-# 使用任意静态文件服务器启动
-# 例如：python -m http.server 3000
-```
+原 kpl_stats 仓库中的 homepage 目录已移除，数据 API 后端保持不变。
 
 ### 访问应用
 
 | 应用              | 地址                             | 说明            |
 | ----------------- | -------------------------------- | --------------- |
 | **数据平台**      | http://localhost:3000            | Vue 前端        |
-| **粉丝应援站**    | http://localhost:3000 (homepage) | 静态页面        |
 | **后端 API 文档** | http://localhost:8001/docs       | FastAPI Swagger |
 | **数据管理**      | http://localhost:3000/admin      | 管理面板        |
 | **比赛记录**      | http://localhost:3000/records    | 比赛记录页面    |
 
-**粉丝应援站导航菜单：**
-- 首页 → 关于无言 → 生涯数据（含职业生涯） → 高光时刻（含国服英雄） → 照片墙 → 记录 → 应援
+> **粉丝应援站**：已迁移至 [wuyan-site](https://github.com/scriptsmay/wuyan-site) 仓库，由 Vercel 部署（https://kplwuyan.site）。
 
 ## 路由配置
 
@@ -499,7 +476,6 @@ npm run build
 | 文档                                               | 说明                    |
 | -------------------------------------------------- | ----------------------- |
 | [`doc/halo-api-proxy.md`](doc/halo-api-proxy.md)   | Halo API 代理配置指南   |
-| [`doc/homepage-config.md`](doc/homepage-config.md) | 粉丝应援站配置指南      |
 | [`.github/SECRETS.md`](.github/SECRETS.md)         | GitHub Secrets 配置说明 |
 
 ## 常见问题
