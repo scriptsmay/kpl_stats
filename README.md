@@ -1,14 +1,10 @@
-# KPL Stats - 无言粉丝应援站 + 选手数据展示
+# KPL Stats - 无言选手数据展示站
 
-KPL 选手生涯数据展示平台与粉丝应援站，为电竞选手"KSG.无言"打造的个人数据展示页面与粉丝家园。
+KPL 选手生涯数据展示平台，为电竞选手"KSG.无言"打造的个人数据展示页面。
 
 ## 项目预览
 
-### 粉丝应援站
-
-粉丝应援站包含关于无言的详细信息、生涯高光时刻、国服英雄池等内容。
-
-![站点预览](doc/snapshot.png)
+[无言选手职业生涯数据展示平台](https://data.kplwuyan.site/)]
 
 ### 选手个人职业数据平台
 
@@ -87,8 +83,6 @@ kpl_stats/
 └── docker-compose.yml       # Docker Compose 配置
 ```
 
-> **注意**: 粉丝应援站（homepage）静态页面已迁移至独立仓库 [wuyan-site](https://github.com/scriptsmay/wuyan-site)，由 Vercel 部署。
-
 ## 快速开始
 
 ### 环境要求
@@ -141,12 +135,12 @@ npm run dev
 
 ### 访问应用
 
-| 应用              | 地址                             | 说明            |
-| ----------------- | -------------------------------- | --------------- |
-| **数据平台**      | http://localhost:3000            | Vue 前端        |
-| **后端 API 文档** | http://localhost:8001/docs       | FastAPI Swagger |
-| **数据管理**      | http://localhost:3000/admin      | 管理面板        |
-| **比赛记录**      | http://localhost:3000/records    | 比赛记录页面    |
+| 应用              | 地址                          | 说明            |
+| ----------------- | ----------------------------- | --------------- |
+| **数据平台**      | http://localhost:3000         | Vue 前端        |
+| **后端 API 文档** | http://localhost:8001/docs    | FastAPI Swagger |
+| **数据管理**      | http://localhost:3000/admin   | 管理面板        |
+| **比赛记录**      | http://localhost:3000/records | 比赛记录页面    |
 
 > **粉丝应援站**：已迁移至 [wuyan-site](https://github.com/scriptsmay/wuyan-site) 仓库，由 Vercel 部署（https://kplwuyan.site）。
 
@@ -154,11 +148,11 @@ npm run dev
 
 前端使用 Vue Router 进行路由管理，当前配置的路由如下：
 
-| 路由      | 组件名称         | 说明           |
-| --------- | ---------------- | -------------- |
-| `/`       | Home.vue         | 首页           |
-| `/admin`  | AdminPanel.vue   | 数据管理面板   |
-| `/records`| MatchRecords.vue | 比赛记录页面   |
+| 路由       | 组件名称         | 说明         |
+| ---------- | ---------------- | ------------ |
+| `/`        | Home.vue         | 首页         |
+| `/admin`   | AdminPanel.vue   | 数据管理面板 |
+| `/records` | MatchRecords.vue | 比赛记录页面 |
 
 路由配置文件位于 `frontend/src/router/index.js`。
 
@@ -473,10 +467,10 @@ npm run build
 
 ## 文档
 
-| 文档                                               | 说明                    |
-| -------------------------------------------------- | ----------------------- |
-| [`doc/halo-api-proxy.md`](doc/halo-api-proxy.md)   | Halo API 代理配置指南   |
-| [`.github/SECRETS.md`](.github/SECRETS.md)         | GitHub Secrets 配置说明 |
+| 文档                                             | 说明                    |
+| ------------------------------------------------ | ----------------------- |
+| [`doc/halo-api-proxy.md`](doc/halo-api-proxy.md) | Halo API 代理配置指南   |
+| [`.github/SECRETS.md`](.github/SECRETS.md)       | GitHub Secrets 配置说明 |
 
 ## 常见问题
 

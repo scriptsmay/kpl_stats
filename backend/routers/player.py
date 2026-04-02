@@ -477,15 +477,14 @@ async def list_all_caches():
 @router.get("/api/admin/archive_list")
 async def list_archives():
     """
-    获取历史存档列表
+    获取历史存档列表（已废弃：存档功能已移除）
     """
-    archives = get_archive_list()
     return {
         "code": 200,
-        "message": "存档列表",
+        "message": "存档功能已移除",
         "data": {
-            "archives": archives,
-            "total": len(archives)
+            "archives": [],
+            "total": 0
         }
     }
 
@@ -496,29 +495,9 @@ async def get_archive(
     season_type: str = Query('all', description="赛季类型 (all/league/cup)")
 ):
     """
-    获取指定日期的存档数据
-
-    参数：
-    - date: 日期，格式 YYYY-MM-DD
-    - season_type: 赛季类型
+    获取指定日期的存档数据（已废弃：存档功能已移除）
     """
-    archive_file = DATA_DIR / f"cache.{season_type}.{date}.json"
-
-    if not archive_file.exists():
-        raise HTTPException(status_code=404, detail=f"日期 {date} 的存档不存在 (season_type={season_type})")
-
-    try:
-        with open(archive_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return {
-            "code": 200,
-            "message": "存档数据",
-            "data": data,
-            "archive_date": date,
-            "season_type": season_type
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"读取存档失败：{str(e)}")
+    raise HTTPException(status_code=410, detail="存档功能已移除，历史数据不再保留")
 
 
 @router.delete("/api/admin/cache")
