@@ -391,7 +391,8 @@ const getSeasonName = (seasonId) => {
 // 筛选后的比赛详情
 const filteredMatchDetails = computed(() => {
   if (!careerData.value) return [];
-  const matches = careerData.value.match_details || [];
+  // match_details 需要按照比赛日期降序排序
+  const matches = careerData.value.match_details.sort((a, b) => new Date(b.match_date) - new Date(a.match_date)) || [];
   // 数据已经按赛季类型从 API 获取，不需要再过滤
   return matches;
 });

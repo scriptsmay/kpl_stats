@@ -67,3 +67,4 @@ test/*.json
 .DS_Store
 .AppleDouble
 .LSOverride
+frontend/.env.development
