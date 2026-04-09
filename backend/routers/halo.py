@@ -11,6 +11,9 @@ from services.halo_service import (
     # 博客
     fetch_halo_posts_from_api, save_halo_posts_cache,
     load_halo_posts_cache, is_halo_posts_cache_valid, get_halo_posts_cache_file,
+    # 时间轴
+    fetch_halo_timelines_from_api, save_halo_timeline_cache,
+    load_halo_timeline_cache, is_halo_timeline_cache_valid,
     # 视频
     fetch_halo_videos_from_api, save_halo_video_cache,
     load_halo_video_cache, is_halo_video_cache_valid, get_halo_video_cache_file,
@@ -156,6 +159,71 @@ async def clear_halo_cache():
                 "cache_file": str(cache_file)
             }
         }
+
+
+@router.get("/api/timeline/list")
+async def get_halo_timeline_list(
+    group: str = Query(..., description="时间轴分组 ID"),
+    force_refresh: bool = Query(False, description="是否强制刷新缓存")
+):
+    """
+    获取 Halo 时间轴指定分组记录（带缓存）
+    """
+    # 如果没有指定分组，直接返回错误
+    if not group:
+        raise HTTPException(status_code=400, detail="必须指定时间轴分组 ID")
+    
+    cache_data = load_halo_timeline_cache(group)
+
+    if force_refresh:
+        try:
+            data = await fetch_halo_timelines_from_api(group)
+            save_halo_timeline_cache(data, group)
+            return {
+                "code": 200,
+                "message": "数据已强制刷新",
+                "data": data,
+                "from_cache": False,
+                "refresh_time": datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"强制刷新失败：{str(e)}")
+
+    if cache_data and is_halo_timeline_cache_valid(cache_data):
+        print(f"[{datetime.now()}] 使用 Halo 时间轴缓存数据，缓存时间：{cache_data['timestamp']}")
+        return {
+            "code": 200,
+            "message": "数据来自缓存",
+            "data": cache_data["data"],
+            "from_cache": True,
+            "cache_time": cache_data["timestamp"]
+        }
+
+    try:
+        print(f"[{datetime.now()}] Halo 时间轴缓存无效，从 API 获取数据")
+        data = await fetch_halo_timelines_from_api(group)
+        save_halo_timeline_cache(data, group)
+        return {
+            "code": 200,
+            "message": "数据已更新",
+            "data": data,
+            "from_cache": False,
+            "refresh_time": datetime.now().isoformat()
+        }
+    except HTTPException:
+        if cache_data:
+            print(f"[{datetime.now()}] Halo 时间轴 API 失败，返回过期缓存")
+            return {
+                "code": 200,
+                "message": "数据来自过期缓存（Halo API 暂时不可用）",
+                "data": cache_data["data"],
+                "from_cache": True,
+                "cache_time": cache_data["timestamp"],
+                "is_expired": True
+            }
+        raise
 
 
 # ============= Halo 视频 API 接口 =============

@@ -1,5 +1,6 @@
 # halo_service.py — Halo 相关的 API 调用函数 + 缓存逻辑
 
+import hashlib
 import json
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
@@ -113,10 +114,87 @@ async def fetch_halo_posts_from_api(size: int = 3):
             return {"items": simplified_items}
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Halo API 请求超时")
+
+
+# ============= Halo 时间轴缓存 =============
+
+def _build_halo_timeline_cache_file(group: str) -> Path:
+    """根据 group 生成 Halo 时间轴缓存文件路径"""
+    group_key = ''.join(ch if ch.isalnum() or ch in ('-', '_') else '_' for ch in group)[:64] or 'timeline'
+    return DATA_DIR / f"cache.halo.timeline.{group_key}.json"
+
+
+def save_halo_timeline_cache(data: dict, group: str):
+    """保存 Halo 时间轴查询结果到缓存"""
+    now = datetime.now()
+    cache_data = {
+        "timestamp": now.isoformat(),
+        "query": {
+            "group": group,
+        },
+        "data": data
+    }
+    cache_file = _build_halo_timeline_cache_file(group)
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    print(f"[{now}] Halo 时间轴缓存已保存，group={group}")
+
+
+def load_halo_timeline_cache(group: str):
+    """从本地文件加载 Halo 时间轴缓存"""
+    cache_file = _build_halo_timeline_cache_file(group)
+    if cache_file.exists():
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"读取 Halo 时间轴缓存失败：{e}")
+            return None
+    return None
+
+
+def is_halo_timeline_cache_valid(cache_data: dict) -> bool:
+    """检查 Halo 时间轴缓存是否有效"""
+    if not cache_data:
+        return False
+    try:
+        cache_time = datetime.fromisoformat(cache_data["timestamp"])
+        return datetime.now() - cache_time < timedelta(hours=HALO_POSTS_CACHE_TTL_HOURS)
+    except (KeyError, ValueError):
+        return False
+
+
+async def fetch_halo_timelines_from_api(group: str):
+    """从 Halo API 获取时间轴指定分组记录"""
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if HALO_API_TOKEN:
+                headers["Authorization"] = f"Bearer {HALO_API_TOKEN}"
+
+            request_url = f"{HALO_API_BASE.rstrip('/')}/apis/api.timeline.xhhao.com/v1alpha1/timelines"
+            params = {
+                "group": group
+            }
+
+            print(f"[{datetime.now()}] 开始请求 Halo 时间轴 API: {request_url} group={group}")
+            response = await client.get(
+                request_url,
+                headers=headers,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            halo_data = response.json()
+
+            print(f"[{datetime.now()}] Halo 时间轴 API 请求成功，group={group}")
+            return halo_data
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Halo 时间轴 API 请求超时")
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Halo API 错误：{e.response.text}")
+        raise HTTPException(status_code=e.response.status_code, detail=f"Halo 时间轴 API 错误：{e.response.text}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取 Halo 文章失败：{str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取 Halo 时间轴失败：{str(e)}")
 
 
 # ============= Halo 视频缓存 =============
@@ -253,7 +331,7 @@ async def fetch_halo_photos_from_api():
             photos_url = f"{HALO_API_BASE}/apis/console.api.photo.halo.run/v1alpha1/photos"
             params = {
                 "page": 1,
-                "size": 50,
+                "size": 20,
                 "keyword": ""
             }
 
@@ -277,7 +355,7 @@ async def fetch_halo_photos_from_api():
                 if url and not url.startswith('http'):
                     url = f"{HALO_API_BASE.rstrip('/')}{url}"
 
-                thumb_url = f"{url}?width=400" if url else ''
+                thumb_url = f"{url}?width=800" if url else ''
 
                 labels = metadata.get('labels', {})
                 group_name = labels.get('photo.halo.run/group-name', '')
