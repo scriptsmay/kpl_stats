@@ -1,24 +1,20 @@
 /**
- * GitHub 数据源 API 模块
- * 直接从 kpl_data_daily 仓库读取 JSON 数据
- * 数据源: https://github.com/scriptsmay/kpl_data_daily
+ * kpl_data_daily static JSON data source.
+ * Reads stable latest/derived URLs instead of scanning GitHub Contents API.
  */
 import axios from 'axios';
 
-// GitHub 代理（解决国内网络问题）
 const GITHUB_PROXY = 'https://github.matishare.com/proxy/';
 const GITHUB_BASE = `${GITHUB_PROXY}https://raw.githubusercontent.com/scriptsmay/kpl_data_daily/main/data`;
-
-// 目录列表也走代理
-const GITHUB_API_FILELIST = `https://api.github.com/repos/scriptsmay/kpl_data_daily/contents/data`;
-
-// localStorage 缓存键前缀
 const CACHE_PREFIX = 'kpl_data_';
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 小时
+const CACHE_TTL = 24 * 60 * 60 * 1000;
+const SUPPORTED_SCHEMA_VERSION = 1;
 
-/**
- * 从 localStorage 读取缓存
- */
+export const DEFAULT_SEASON = 'current';
+
+let currentSeasonCache = null;
+let seasonNameMap = null;
+
 function getLocalCache(key) {
   try {
     const raw = localStorage.getItem(CACHE_PREFIX + key);
@@ -31,159 +27,180 @@ function getLocalCache(key) {
   }
 }
 
-/**
- * 写入 localStorage 缓存
- */
 function setLocalCache(key, data) {
   try {
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {
-    // storage 满了就忽略
+    // Ignore storage quota errors.
   }
 }
 
-/**
- * 通用 GitHub 数据获取
- * 支持三种文件名格式：
- *   - namespace.season.date.json（有赛季有日期）
- *   - namespace.date.json（无赛季有日期）
- *   - namespace.json（无赛季无日期，固定文件）
- * @param {string} namespace - 数据命名空间
- * @param {string} season - 赛季 ID，空字符串表示无赛季
- * @param {string} [date] - 可选日期 YYYYMMDD
- */
-async function fetchData(namespace, season, date) {
-  const cacheKey = `${namespace}.${season || 'noseason'}.${date || 'latest'}`;
-
-  // 1. 检查缓存
+async function fetchJson(path, cacheKey) {
   const cached = getLocalCache(cacheKey);
-  if (cached) {
-    console.log(`从缓存中读取数据: ${cacheKey}`, cached);
+  if (cached) return cached;
+
+  const data = await fetchRemoteJson(path);
+  setLocalCache(cacheKey, data);
+  return data;
+}
+
+async function fetchRemoteJson(path) {
+  const url = `${GITHUB_BASE}/${path}`;
+  const { data } = await axios.get(url, { timeout: 15000 });
+  return data;
+}
+
+function isCurrentSeasonPayload(payload) {
+  return payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.current && payload?.build_id;
+}
+
+function validateDerivedPayload(payload, currentSeason) {
+  return (
+    payload?.schema_version === SUPPORTED_SCHEMA_VERSION &&
+    payload?.season === currentSeason.current &&
+    payload?.build_id === currentSeason.build_id
+  );
+}
+
+export async function getCurrentSeason() {
+  if (currentSeasonCache) return currentSeasonCache;
+
+  const cacheKey = `current-season.v${SUPPORTED_SCHEMA_VERSION}`;
+  const cached = getLocalCache(cacheKey);
+  if (isCurrentSeasonPayload(cached)) {
+    currentSeasonCache = cached;
+    return currentSeasonCache;
+  }
+
+  const data = await fetchJson('latest/current-season.json', cacheKey);
+  if (!isCurrentSeasonPayload(data)) {
+    throw new Error('当前赛季数据版本不兼容');
+  }
+  currentSeasonCache = data;
+  return currentSeasonCache;
+}
+
+async function resolveSeason(season) {
+  if (season && season !== DEFAULT_SEASON) return season;
+  const current = await getCurrentSeason();
+  return current.current;
+}
+
+async function fetchLatest(namespace, season = DEFAULT_SEASON) {
+  const resolvedSeason = await resolveSeason(season);
+  const cacheKey = `latest.${resolvedSeason}.${namespace}.v${SUPPORTED_SCHEMA_VERSION}`;
+  return fetchJson(`latest/${resolvedSeason}/${namespace}.json`, cacheKey);
+}
+
+async function fetchLatestGlobal(namespace) {
+  const cacheKey = `latest.global.${namespace}.v${SUPPORTED_SCHEMA_VERSION}`;
+  return fetchJson(`latest/${namespace}.json`, cacheKey);
+}
+
+export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
+  const current = await getCurrentSeason();
+  const resolvedSeason = await resolveSeason(season);
+  const cacheKey = `derived.${resolvedSeason}.${pageKey}.v${SUPPORTED_SCHEMA_VERSION}.${current.build_id}`;
+  const cachePrefix = `derived.${resolvedSeason}.${pageKey}.v${SUPPORTED_SCHEMA_VERSION}.`;
+
+  const cached = getLocalCache(cacheKey);
+  if (cached && validateDerivedPayload(cached, { ...current, current: resolvedSeason })) {
     return cached;
   }
 
-  // 2. 文件名
-  let filename;
-  if (date) {
-    filename = season ? `${namespace}.${season}.${date}.json` : `${namespace}.${date}.json`;
-  } else {
-    // 通过 GitHub API 列出目录，找到最新的文件
-    try {
-      const { data: files } = await axios.get(GITHUB_API_FILELIST, { timeout: 10000 });
-
-      let matched;
-
-      if (season) {
-        // 有赛季：namespace.season.date.json
-        const pattern = new RegExp(`^${namespace.replace('.', '\\.')}.${season.replace('.', '\\.')}.(\\d{8})\\.json$`);
-        matched = files
-          .filter((f) => f.type === 'file' && pattern.test(f.name))
-          .map((f) => ({ name: f.name, date: f.name.match(pattern)?.[1] }))
-          .filter((f) => f.date)
-          .sort((a, b) => b.date.localeCompare(a.date));
-      } else {
-        // 无赛季：先尝试 namespace.date.json，再尝试 namespace.json
-        const datedPattern = new RegExp(`^${namespace.replace('.', '\\.')}.(\\d{8})\\.json$`);
-        matched = files
-          .filter((f) => f.type === 'file' && datedPattern.test(f.name))
-          .map((f) => ({ name: f.name, date: f.name.match(datedPattern)?.[1] }))
-          .filter((f) => f.date)
-          .sort((a, b) => b.date.localeCompare(a.date));
-
-        // 没有带日期的文件，尝试固定文件名 namespace.json
-        if (matched.length === 0) {
-          const fixedFile = files.find((f) => f.name === `${namespace}.json`);
-          if (fixedFile) {
-            filename = fixedFile.name;
-          }
-        }
-      }
-
-      if (!filename) {
-        if (matched && matched.length > 0) {
-          filename = matched[0].name;
-        } else {
-          throw new Error(`未找到 ${namespace}${season ? '.' + season : ''} 的数据文件`);
-        }
-      }
-    } catch (err) {
-      console.error('GitHub API 查询失败:', err);
-      throw err;
-    }
+  const payload = await fetchRemoteJson(`derived/${resolvedSeason}/${pageKey}.json`);
+  if (!validateDerivedPayload(payload, { ...current, current: resolvedSeason })) {
+    const fallback = getLastValidDerivedCache(cachePrefix, resolvedSeason);
+    if (fallback) return fallback;
+    throw new Error(`${pageKey} 派生数据正在发布或版本不兼容`);
   }
+  setLocalCache(cacheKey, payload);
+  return payload;
+}
 
-  // 3. 获取数据
-  const url = `${GITHUB_BASE}/${filename}`;
+function getLastValidDerivedCache(cachePrefix, season) {
   try {
-    const { data } = await axios.get(url, { timeout: 15000 });
-    setLocalCache(cacheKey, data);
-    return data;
-  } catch (err) {
-    console.error(`获取数据失败: ${url}`, err);
-    throw err;
+    return Object.keys(localStorage)
+      .filter((key) => key.startsWith(CACHE_PREFIX + cachePrefix))
+      .map((key) => getLocalCache(key.slice(CACHE_PREFIX.length)))
+      .filter((payload) => payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.season === season)
+      .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')))[0];
+  } catch {
+    return null;
   }
 }
 
-// ====== 具体数据接口 ======
+async function derivedData(pageKey, season, fallbackFn) {
+  try {
+    const payload = await fetchDerived(pageKey, season);
+    return payload.data;
+  } catch (err) {
+    console.warn(`读取 derived/${pageKey} 失败，降级到 latest`, err);
+    return fallbackFn();
+  }
+}
 
-/** 选手能力数据（有赛季） */
-export const getPlayerAbilities = (season) => fetchData('player-abilities', season);
+export const getPlayerAbilities = (season = DEFAULT_SEASON) =>
+  derivedData('abilities', season, () => fetchLatest('player-abilities', season));
 
-/** 全选手统计数据（有赛季） */
-export const getAllPlayerStats = (season) => fetchData('all-player-stats', season);
+export const getAllPlayerStats = (season = DEFAULT_SEASON) =>
+  derivedData('ranking', season, () => fetchLatest('all-player-stats', season));
 
-/** 联盟英雄胜率（有赛季） */
-export const getHeroWinRate = (season) => fetchData('hero-win-rate', season);
+export const getHeroWinRate = (season = DEFAULT_SEASON) => fetchLatest('hero-win-rate', season);
 
-/** 选手英雄胜场统计（有赛季，返回数组） */
-export const getPlayerHeroSummary = (season) => fetchData('player-hero-summary', season);
+export const getPlayerHeroSummary = (season = DEFAULT_SEASON) =>
+  derivedData('heroes', season, async () => fetchLatest('player-hero-summary', season)).then((data) => {
+    if (data?.summary) return { code: 200, data: data.summary };
+    return data;
+  });
 
-/** 英雄对局详情（有赛季，无日期取最新） */
-export const getPlayerHeroBattles = (season) => fetchData('player-hero-battles', season);
+export const getPlayerHeroBattles = (season = DEFAULT_SEASON) =>
+  derivedData('heroes', season, async () => fetchLatest('player-hero-battles', season)).then((data) => {
+    if (data?.battles) return { heroes: data.battles };
+    return data;
+  });
 
-/** 选手胜场数据（有赛季） */
-export const getPlayerWinStats = (season) => fetchData('player-win-stats', season);
+export const getPlayerWinStats = (season = DEFAULT_SEASON) =>
+  derivedData('win-lose', season, async () => fetchLatest('player-win-stats', season)).then((data) => {
+    if (data?.win) return { code: 200, data: data.win ? [data.win] : [] };
+    return data;
+  });
 
-/** 选手负场数据（有赛季） */
-export const getPlayerLoseStats = (season) => fetchData('player-lose-stats', season);
+export const getPlayerLoseStats = (season = DEFAULT_SEASON) =>
+  derivedData('win-lose', season, async () => fetchLatest('player-lose-stats', season)).then((data) => {
+    if (data?.lose) return { code: 200, data: data.lose && Object.keys(data.lose).length ? [data.lose] : [] };
+    return data;
+  });
 
-/** 战队伤害分布（有赛季） */
-export const getTeamDamageDistribution = (season) => fetchData('team-damage-distribution', season);
+export const getTeamDamageDistribution = (season = DEFAULT_SEASON) =>
+  fetchLatest('team-damage-distribution', season);
 
-/** 获胜亲近度分析（有赛季） */
-export const getWinAffinityAnalysis = (season) => fetchData('win-affinity-analysis', season);
+export const getWinAffinityAnalysis = (season = DEFAULT_SEASON) =>
+  fetchLatest('win-affinity-analysis', season);
 
-/** 选手生涯数据（无赛季，跨赛季累计） */
-export const getPlayerCareer = () => fetchData('player-career-wuyan', '');
+export const getPlayerCareer = () => fetchLatestGlobal('player-career-wuyan');
 
-/** 清除所有本地缓存 */
+export const getInsights = (season = DEFAULT_SEASON) =>
+  fetchDerived('insights', season).then((payload) => payload.data);
+
 export const clearDataCache = () => {
   const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
   keys.forEach((k) => localStorage.removeItem(k));
+  currentSeasonCache = null;
+  seasonNameMap = null;
 };
 
-/** 默认赛季 */
-export const DEFAULT_SEASON = 'KPL2026S1';
-
-// 赛季名称映射（缓存）
-let seasonNameMap = null;
-
-/**
- * 获取赛季名称映射 { KPL2026S1: 'KPL2026春季赛', ... }
- */
 export async function getSeasonNameMap() {
   if (seasonNameMap) return seasonNameMap;
   try {
-    const res = await fetchData('seasons-list', '');
-    const list = Array.isArray(res) ? res : res.data || [];
+    const list = await fetchLatestGlobal('seasons-list');
     seasonNameMap = {};
-    list.forEach((s) => {
+    (Array.isArray(list) ? list : list.data || []).forEach((s) => {
       seasonNameMap[s.tournament_id] = s.tournament_name;
     });
     return seasonNameMap;
   } catch (err) {
     console.error('获取赛季列表失败:', err);
-    // 降级
-    return { KPL2026S1: 'KPL2026春季赛', KCC2025: '2025挑战者杯' };
+    return { KPL2026S2: 'KPL2026夏季赛', KPL2026S1: 'KPL2026春季赛', KCC2025: '2025挑战者杯' };
   }
 }
