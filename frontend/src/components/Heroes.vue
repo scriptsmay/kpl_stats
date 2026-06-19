@@ -63,67 +63,83 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(hero, index) in heroStatsSorted" :key="hero.hero_id">
-                <td class="col-rank">{{ index + 1 }}</td>
-                <td class="col-hero">
-                  <div class="hero-info">
-                    <img
-                      :src="heroAvatar(hero.hero_id)"
-                      :alt="hero.hero_name"
-                      class="hero-avatar"
-                      @error="handleAvatarError($event)"
-                    />
-                    <span class="hero-name">{{ hero.hero_name }}</span>
-                  </div>
-                </td>
-                <td class="col-num">{{ hero.total_matches }}</td>
-                <td class="col-num text-success">{{ hero.win_matches }}</td>
-                <td class="col-num text-danger">{{ hero.total_matches - hero.win_matches }}</td>
-                <td class="col-num">
-                  <span :class="winRateClass(hero.win_rate)">{{ hero.win_rate }}</span>
-                </td>
-                <td class="col-action">
-                  <button v-if="heroBattles[hero.hero_name]" class="detail-btn" @click="toggleDetail(hero.hero_name)">
-                    {{ expandedHero === hero.hero_name ? '收起' : '查看' }}
-                  </button>
-                  <span v-else class="no-data">-</span>
-                </td>
-              </tr>
+              <template v-for="(hero, index) in heroStatsSorted" :key="hero.hero_id">
+                <tr :class="{ 'is-expanded': expandedHero === hero.hero_name }">
+                  <td class="col-rank">{{ index + 1 }}</td>
+                  <td class="col-hero">
+                    <div class="hero-info">
+                      <img
+                        :src="heroAvatar(hero.hero_id)"
+                        :alt="hero.hero_name"
+                        class="hero-avatar"
+                        @error="handleAvatarError($event)"
+                      />
+                      <span class="hero-name">{{ hero.hero_name }}</span>
+                    </div>
+                  </td>
+                  <td class="col-num">{{ hero.total_matches }}</td>
+                  <td class="col-num text-success">{{ hero.win_matches }}</td>
+                  <td class="col-num text-danger">{{ hero.total_matches - hero.win_matches }}</td>
+                  <td class="col-num">
+                    <span :class="winRateClass(hero.win_rate)">{{ hero.win_rate }}</span>
+                  </td>
+                  <td class="col-action">
+                    <button
+                      v-if="heroBattles[hero.hero_name]"
+                      class="detail-btn"
+                      :class="{ active: expandedHero === hero.hero_name }"
+                      type="button"
+                      :aria-expanded="expandedHero === hero.hero_name"
+                      @click="toggleDetail(hero.hero_name)"
+                    >
+                      {{ expandedHero === hero.hero_name ? '收起' : '查看' }}
+                      <span class="detail-chevron" aria-hidden="true"></span>
+                    </button>
+                    <span v-else class="no-data">-</span>
+                  </td>
+                </tr>
+                <tr v-if="expandedHero === hero.hero_name && heroBattles[hero.hero_name]" class="hero-detail-row">
+                  <td colspan="7">
+                    <div class="hero-detail-panel">
+                      <div class="hero-detail-header">
+                        <div>
+                          <div class="hero-detail-title">{{ hero.hero_name }} 对局详情</div>
+                          <div class="hero-detail-meta">{{ heroBattles[hero.hero_name].total }} 局记录</div>
+                        </div>
+                        <button class="detail-close" type="button" @click="expandedHero = null">收起</button>
+                      </div>
+                      <div class="inline-battles-list">
+                        <div
+                          v-for="(battle, idx) in heroBattles[hero.hero_name].battles"
+                          :key="idx"
+                          class="inline-battle"
+                          :class="{ win: battle.is_win, lose: !battle.is_win, mvp: battle.is_mvp }"
+                        >
+                          <div class="inline-battle-main">
+                            <span class="battle-result" :class="battle.is_win ? 'win' : 'lose'">{{
+                              battle.is_win ? '胜' : '负'
+                            }}</span>
+                            <span v-if="battle.is_mvp" class="battle-mvp">MVP</span>
+                            <span class="battle-kda">{{ battle.kda }}</span>
+                            <span class="battle-vs">{{ battle.versus_info }}</span>
+                            <span class="battle-date">{{ formatMatchDate(battle.match_date) }}</span>
+                          </div>
+                          <div class="inline-battle-detail">
+                            <span v-if="battle.equip_ids?.length">
+                              <span class="equip-label">出装：</span>{{ battle.equip_ids.join(' / ') }}
+                            </span>
+                            <span v-if="battle.rune">
+                              <span class="rune-label">铭文：</span>{{ formatRune(battle.rune) }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- 对局详情展开区 -->
-      <div v-if="expandedHero && heroBattles[expandedHero]" class="battles-section">
-        <div class="section-title">{{ expandedHero }} 对局详情 ({{ heroBattles[expandedHero].total }} 局)</div>
-        <div class="battles-list">
-          <div
-            v-for="(battle, idx) in heroBattles[expandedHero].battles"
-            :key="idx"
-            class="battle-card"
-            :class="{ win: battle.is_win, lose: !battle.is_win, mvp: battle.is_mvp }"
-          >
-            <div class="battle-header">
-              <span class="battle-result" :class="battle.is_win ? 'win' : 'lose'">{{
-                battle.is_win ? '胜' : '负'
-              }}</span>
-              <span v-if="battle.is_mvp" class="battle-mvp">⭐ MVP</span>
-              <span class="battle-kda">{{ battle.kda }}</span>
-              <span class="battle-vs">{{ battle.versus_info }}</span>
-              <span class="battle-date">{{ formatMatchDate(battle.match_date) }}</span>
-            </div>
-            <div class="battle-detail">
-              <div class="battle-equip">
-                <span class="equip-label">出装：</span>
-                <span class="equip-list">{{ (battle.equip_ids || []).join(' / ') }}</span>
-              </div>
-              <div v-if="battle.rune" class="battle-rune">
-                <span class="rune-label">铭文：</span>
-                <span class="rune-list">{{ formatRune(battle.rune) }}</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -430,6 +446,10 @@ onUnmounted(() => {
 .hero-table tbody tr:hover {
   background: #f5f7ff;
 }
+.hero-table tbody tr.is-expanded {
+  background: #f5f7ff;
+  box-shadow: inset 3px 0 0 #4361ee;
+}
 .col-rank {
   width: 48px;
   color: var(--gray-400);
@@ -470,6 +490,11 @@ onUnmounted(() => {
   font-weight: 600;
 }
 .detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 68px;
   padding: 4px 10px;
   border: 1px solid #4361ee;
   background: transparent;
@@ -483,46 +508,101 @@ onUnmounted(() => {
   background: #4361ee;
   color: #fff;
 }
+.detail-btn.active {
+  background: #4361ee;
+  color: #fff;
+}
+.detail-chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.detail-btn.active .detail-chevron {
+  transform: rotate(225deg);
+}
 .no-data {
   color: var(--gray-300);
 }
 
-/* 对局详情 */
-.battles-section {
-  background: var(--bg-card, #fff);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-sm);
+/* 表格内联对局详情 */
+.hero-detail-row:hover {
+  background: transparent !important;
 }
-.battles-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 500px;
-  overflow-y: auto;
+.hero-detail-row td {
+  padding: 0 12px 16px;
+  background: #f5f7ff;
+  border-bottom: 1px solid #dfe5ff;
 }
-.battle-card {
-  border: 1px solid var(--border-color, #f0f0f0);
+.hero-detail-panel {
+  border: 1px solid #dfe5ff;
   border-radius: 8px;
-  padding: 12px 16px;
-  border-left: 4px solid var(--gray-300);
+  background: #fff;
+  padding: 14px;
+  text-align: left;
 }
-.battle-card.win {
-  border-left-color: var(--success-color);
-}
-.battle-card.lose {
-  border-left-color: var(--danger-color);
-}
-.battle-card.mvp {
-  background: rgba(255, 193, 7, 0.04);
-}
-.battle-header {
+.hero-detail-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 12px;
+}
+.hero-detail-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.hero-detail-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--gray-400);
+}
+.detail-close {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--gray-500);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.detail-close:hover {
+  border-color: #4361ee;
+  color: #4361ee;
+}
+.inline-battles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.inline-battle {
+  border: 1px solid var(--border-color, #f0f0f0);
+  border-left: 4px solid var(--gray-300);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.inline-battle.win {
+  border-left-color: var(--success-color);
+}
+.inline-battle.lose {
+  border-left-color: var(--danger-color);
+}
+.inline-battle.mvp {
+  background: rgba(255, 193, 7, 0.04);
+}
+.inline-battle-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 .battle-result {
   font-weight: 700;
@@ -542,22 +622,33 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 600;
   color: #e67e22;
+  white-space: nowrap;
 }
 .battle-kda {
   font-weight: 700;
   font-size: 15px;
   color: var(--gray-800);
+  white-space: nowrap;
 }
 .battle-vs {
   font-size: 13px;
   color: var(--gray-600);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .battle-date {
   font-size: 12px;
   color: var(--gray-400);
   margin-left: auto;
+  white-space: nowrap;
 }
-.battle-detail {
+.inline-battle-detail {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--gray-600);
   line-height: 1.6;
@@ -626,8 +717,29 @@ onUnmounted(() => {
   .hero-table td {
     padding: 8px 6px;
   }
-  .battle-header {
+  .hero-detail-row td {
+    padding: 0 8px 12px;
+  }
+  .hero-detail-header {
+    align-items: flex-start;
+  }
+  .inline-battle-main {
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 8px;
+  }
+  .battle-date {
+    margin-left: 0;
+  }
+  .battle-vs {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+  .inline-battle-detail {
+    gap: 4px;
+  }
+  .inline-battle-detail span {
+    flex-basis: 100%;
   }
 }
 </style>
