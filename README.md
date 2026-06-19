@@ -4,13 +4,9 @@ KPL 选手生涯数据展示平台，为电竞选手"KSG.无言"打造的个人�
 
 ## 项目预览
 
-[无言选手职业生涯数据展示平台](https://data.kplwuyan.site/)]
+[无言选手职业生涯数据展示平台](https://data.kplwuyan.site/)
 
-### 选手个人职业数据平台
-
-数据平台展示无言的职业生涯数据，包括出场次数、击杀、MVP 等关键指标。
-
-更多数据可视化正在开发中...
+数据平台展示无言的职业生涯、能力画像、联盟排名、英雄池、胜负对比和比赛高光记录。核心页面优先消费 `kpl_data_daily` 仓库发布的 `latest/` 与 `derived/` 静态 JSON，后端 API 继续负责生涯数据、高光记录缓存、管理接口和 Halo 内容代理。
 
 ## 技术栈
 
@@ -55,9 +51,14 @@ kpl_stats/
 │       ├── router/
 │       │   └── index.js     # 路由配置
 │       ├── api/
-│       │   └── stats.js     # API 请求封装
+│       │   ├── github-data.js # kpl_data_daily 静态 JSON 数据源
+│       │   └── stats.js       # 后端 API 请求封装
 │       ├── components/
 │       │   ├── Home.vue         # 首页组件
+│       │   ├── Abilities.vue    # 能力画像页面
+│       │   ├── Ranking.vue      # 联盟排名页面
+│       │   ├── Heroes.vue       # 英雄池页面
+│       │   ├── WinLose.vue      # 胜负对比页面
 │       │   ├── AdminPanel.vue   # 管理面板组件
 │       │   ├── MatchRecords.vue # 比赛记录页面
 │       │   └── BackToTop.vue    # 回到顶部组件
@@ -139,6 +140,7 @@ npm run dev
 | ----------------- | ----------------------------- | --------------- |
 | **数据平台**      | http://localhost:3000         | Vue 前端        |
 | **后端 API 文档** | http://localhost:8001/docs    | FastAPI Swagger |
+| **线上数据站**    | https://data.kplwuyan.site    | 生产环境        |
 | **数据管理**      | http://localhost:3000/admin   | 管理面板        |
 | **比赛记录**      | http://localhost:3000/records | 比赛记录页面    |
 
@@ -148,13 +150,33 @@ npm run dev
 
 前端使用 Vue Router 进行路由管理，当前配置的路由如下：
 
-| 路由       | 组件名称         | 说明         |
-| ---------- | ---------------- | ------------ |
-| `/`        | Home.vue         | 首页         |
-| `/admin`   | AdminPanel.vue   | 数据管理面板 |
-| `/records` | MatchRecords.vue | 比赛记录页面 |
+| 路由        | 组件名称         | 说明           |
+| ----------- | ---------------- | -------------- |
+| `/`         | Home.vue         | 生涯数据       |
+| `/abilities` | Abilities.vue    | 12 维能力画像  |
+| `/ranking`   | Ranking.vue      | 联盟排名       |
+| `/heroes`    | Heroes.vue       | 英雄池分析     |
+| `/win-lose` | WinLose.vue      | 胜负对比分析   |
+| `/records`  | MatchRecords.vue | 比赛高光记录   |
+| `/admin`    | AdminPanel.vue   | 数据管理面板   |
 
 路由配置文件位于 `frontend/src/router/index.js`。
+
+## 数据来源
+
+### 静态 JSON 数据
+
+能力画像、联盟排名、英雄池、胜负对比等页面通过 `frontend/src/api/github-data.js` 读取 `kpl_data_daily` 仓库生成的数据：
+
+- `data/latest/current-season.json`：当前赛季 ID、赛季名、构建时间和 `build_id`
+- `data/latest/{season}/{namespace}.json`：按赛季覆盖保存的最新原始数据
+- `data/derived/{season}/{page}.json`：面向前端页面的轻量派生数据
+
+前端默认使用 `DEFAULT_SEASON = 'current'`，启动时先解析当前赛季，再按固定 URL 读取对应数据。`derived` 数据会校验 `schema_version`、`season` 和 `build_id`，避免读取到发布过程中的错配数据。
+
+### 后端 API 数据
+
+后端仍提供生涯聚合、高光记录、管理面板和 Halo 内容代理。比赛高光记录接口会对 `season=all` 的多赛季合并结果按 `record_id` 去重，避免上游赛季过滤不准时返回重复记录。
 
 ## API 接口
 
@@ -352,6 +374,13 @@ API_KEY=your_api_key
 # 缓存有效期（小时），默认 24 小时
 CACHE_TTL_HOURS=24
 
+# 赛季列表 API
+SEASONS_API_URL=http://47.102.210.150:5006/seasons/list
+
+# 比赛高光记录 API
+RECORDS_API_URL=http://47.102.210.150:5022/api/records
+RECORDS_CACHE_TTL_HOURS=24
+
 # Halo 博客 API 配置
 HALO_API_BASE=https://blog.kplwuyan.site
 HALO_API_TOKEN=your_halo_api_token
@@ -372,27 +401,24 @@ HALO_PHOTO_CACHE_TTL_SECONDS=3600  # 照片列表缓存时间（秒）
 VITE_API_BASE_URL=http://localhost:8001/api
 ```
 
-### 粉丝应援站 (homepage/config.js)
-
-```javascript
-// 开发环境
-window.API_BASE_URL = 'http://localhost:8001';
-
-// 生产环境
-window.API_BASE_URL = 'https://data.kplwuyan.site/api';
-```
-
 ## 核心功能
 
 ### 数据平台
 
+- ✅ **静态数据消费** - 固定读取 `kpl_data_daily` 的 `latest/` 和 `derived/` JSON
+- ✅ **当前赛季自动解析** - 通过 `latest/current-season.json` 获取当前赛季和赛季名
+- ✅ **Schema 校验** - 校验 `schema_version`、`season` 和 `build_id`，降低发布窗口错配风险
+- ✅ **能力画像** - 展示 12 维能力评分、雷达图和位置平均对比
+- ✅ **联盟排名** - 展示各数据维度的联盟排名和位置排名
+- ✅ **英雄池分析** - 展示英雄使用、胜率对比和表格内联对局详情
+- ✅ **胜负对比** - 对比胜场/负场下的 KDA、经济、团战和资源控制表现
 - ✅ **自动缓存** - 24 小时本地缓存，减少第三方 API 调用
 - ✅ **手动刷新** - 支持强制更新数据
 - ✅ **降级处理** - API 不可用时返回过期缓存
 - ✅ **跨域支持** - Vite 代理，开发环境开箱即用
 - ✅ **零数据库** - 文件缓存，无需额外配置
 - ✅ **赛季分类** - 支持按赛季类型（全部/联赛/杯赛）筛选
-- ✅ **比赛记录** - 展示详细比赛记录列表
+- ✅ **比赛记录** - 展示详细比赛高光记录，并对跨赛季合并结果去重
 - ✅ **回到顶部** - 快速回到页面顶部的便捷功能
 
 ### Halo 博客集成
@@ -458,13 +484,6 @@ npm run build
 # 将 dist 目录部署到 Nginx 或其他静态服务器
 ```
 
-**粉丝应援站：**
-
-```bash
-# 构建（如需要）
-# 将 homepage/ 目录部署到静态服务器
-```
-
 ## 文档
 
 | 文档                                             | 说明                    |
@@ -514,11 +533,6 @@ cd frontend
 npm run dev      # 开发模式
 npm run build    # 构建生产版本
 npm run preview  # 预览构建结果
-
-# 粉丝应援站
-cd homepage
-# 使用任意静态文件服务器
-python -m http.server 3000
 ```
 
 ## 许可证
@@ -530,5 +544,5 @@ MIT License
 **项目维护者**: scriptsmay
 **特别感谢**: qwen code 帮助我完成了整个项目
 
-**文档版本**: 2.2
-**更新日期**: 2026-03-28
+**文档版本**: 2.3
+**更新日期**: 2026-06-19
