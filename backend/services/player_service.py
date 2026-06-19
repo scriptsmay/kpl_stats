@@ -121,6 +121,42 @@ def is_match_records_cache_valid(cache_data: dict) -> bool:
         return False
 
 
+def get_match_record_dedupe_key(record: dict):
+    """生成高光记录去重 key，优先使用上游稳定 ID。"""
+    record_id = record.get("record_id")
+    if record_id is not None:
+        return ("record_id", record_id)
+
+    return (
+        "composite",
+        record.get("date", ""),
+        record.get("game_number", ""),
+        record.get("team1", ""),
+        record.get("team2", ""),
+        record.get("tournament", ""),
+        record.get("content", ""),
+    )
+
+
+def dedupe_match_records(records: list) -> list:
+    """按记录 ID 去重，避免多赛季合并时上游返回交叉数据。"""
+    deduped = []
+    seen = set()
+
+    for record in records:
+        key = get_match_record_dedupe_key(record)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(record)
+
+    duplicate_count = len(records) - len(deduped)
+    if duplicate_count:
+        print(f"[{datetime.now()}] 高光记录去重完成，移除 {duplicate_count} 条重复记录")
+
+    return deduped
+
+
 async def fetch_match_records_from_api(season_id: str):
     """从第三方 API 获取指定赛季的高光记录"""
     try:
@@ -241,6 +277,8 @@ async def fetch_season_records(season: str = 'all') -> list:
         except Exception as e:
             print(f"获取赛季 {season_id} 的高光记录异常：{e}")
             continue
+
+    records_list = dedupe_match_records(records_list)
 
     # 按日期降序排序
     records_list.sort(key=lambda x: x.get("date", ""), reverse=True)
