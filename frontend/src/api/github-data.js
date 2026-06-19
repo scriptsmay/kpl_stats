@@ -193,11 +193,14 @@ export const clearDataCache = () => {
 export async function getSeasonNameMap() {
   if (seasonNameMap) return seasonNameMap;
   try {
+    const current = await getCurrentSeason();
     const list = await fetchLatestGlobal('seasons-list');
     seasonNameMap = {};
     (Array.isArray(list) ? list : list.data || []).forEach((s) => {
       seasonNameMap[s.tournament_id] = s.tournament_name;
     });
+    seasonNameMap[DEFAULT_SEASON] = current.season_name || current.current;
+    seasonNameMap[current.current] = current.season_name || current.current;
     return seasonNameMap;
   } catch (err) {
     console.error('获取赛季列表失败:', err);
