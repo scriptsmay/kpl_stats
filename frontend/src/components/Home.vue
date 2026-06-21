@@ -52,17 +52,6 @@
         </div>
       </div>
 
-      <!-- AI 赛事洞察 -->
-      <div class="insight-overview" v-if="aiInsights">
-        <div class="insight-overview-card">
-          <div class="insight-headline">{{ aiInsights?.headline || '数据洞察生成中' }}</div>
-          <div class="insight-summary">{{ aiInsights?.summary || '' }}</div>
-          <div class="insight-stage" v-if="aiInsights.growth_stage">
-            成长阶段：{{ aiInsights.growth_stage }}
-          </div>
-        </div>
-        <InsightSection :sections="aiInsights.sections" :limit="3" />
-      </div>
 
       <!-- 总数据概览 -->
       <div class="summary-cards">
@@ -331,8 +320,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { getCareerData, getSeasonNameMap } from '../api/stats';
-import { getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
-import InsightSection from './insights/InsightSection.vue';
 
 const careerData = ref(null);
 const seasonFilter = ref('all');
@@ -341,7 +328,6 @@ const pageSize = 10;
 const loading = ref(false);
 const error = ref(null);
 const seasonNameMap = ref({});
-const aiInsights = ref(null);
 
 const playerAvatar = ref('https://hero-wind.oss-cn-shanghai.aliyuncs.com/KPL/KPL_Play_images/KPL2026S1/KSG.无言.png');
 
@@ -475,46 +461,8 @@ const getSeasonSummary = () => {
 onMounted(async () => {
   loadSeasonNameMap();
   loadData();
-  try {
-    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
-    if (!aiInsights.value) {
-      aiInsights.value = await getInsights(DEFAULT_SEASON);
-    }
-  } catch { /* insights unavailable */ }
 });
 </script>
 
 <style scoped>
-.insight-overview {
-  margin-bottom: var(--spacing-xl);
-}
-
-.insight-overview-card {
-  background: var(--bg-card);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--primary-medium);
-  margin-bottom: var(--spacing-lg);
-}
-
-.insight-headline {
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
-  color: var(--gray-800);
-  margin-bottom: var(--spacing-xs);
-}
-
-.insight-summary {
-  font-size: var(--font-size-base);
-  color: var(--gray-600);
-  line-height: 1.6;
-}
-
-.insight-stage {
-  margin-top: var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--primary-medium);
-  font-weight: var(--font-weight-semibold);
-}
 </style>

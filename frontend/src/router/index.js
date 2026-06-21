@@ -6,6 +6,7 @@ import Abilities from '../components/Abilities.vue';
 import Ranking from '../components/Ranking.vue';
 import WinLose from '../components/WinLose.vue';
 import Heroes from '../components/Heroes.vue';
+import AIAnalysis from '../components/AIAnalysis.vue';
 
 const routes = [
   {
@@ -46,6 +47,12 @@ const routes = [
     path: '/records',
     name: 'MatchRecords',
     component: MatchRecords,
+  },
+  {
+    path: '/ai-analysis',
+    name: 'AIAnalysis',
+    component: AIAnalysis,
+    meta: { title: 'AI 分析' },
   },
 ];
 

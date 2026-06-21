@@ -44,9 +44,13 @@ async function fetchJson(path, cacheKey) {
   return data;
 }
 
-async function fetchRemoteJson(path) {
-  const url = `${GITHUB_BASE}/${path}`;
-  const { data } = await axios.get(url, { timeout: 15000 });
+async function fetchRemoteJson(path, options = {}) {
+  const cacheBust = options.cacheBust ? `?_=${Date.now()}` : '';
+  const url = `${GITHUB_BASE}/${path}${cacheBust}`;
+  const { data } = await axios.get(url, {
+    timeout: 15000,
+    headers: options.cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+  });
   return data;
 }
 
@@ -67,17 +71,23 @@ export async function getCurrentSeason() {
 
   const cacheKey = `current-season.v${SUPPORTED_SCHEMA_VERSION}`;
   const cached = getLocalCache(cacheKey);
-  if (isCurrentSeasonPayload(cached)) {
-    currentSeasonCache = cached;
-    return currentSeasonCache;
-  }
 
-  const data = await fetchJson('latest/current-season.json', cacheKey);
-  if (!isCurrentSeasonPayload(data)) {
-    throw new Error('当前赛季数据版本不兼容');
+  try {
+    const data = await fetchRemoteJson('latest/current-season.json', { cacheBust: true });
+    if (!isCurrentSeasonPayload(data)) {
+      throw new Error('当前赛季数据版本不兼容');
+    }
+    setLocalCache(cacheKey, data);
+    currentSeasonCache = data;
+    return currentSeasonCache;
+  } catch (err) {
+    if (isCurrentSeasonPayload(cached)) {
+      console.warn('当前赛季远程数据不可用，使用本地缓存', err);
+      currentSeasonCache = cached;
+      return currentSeasonCache;
+    }
+    throw err;
   }
-  currentSeasonCache = data;
-  return currentSeasonCache;
 }
 
 async function resolveSeason(season) {

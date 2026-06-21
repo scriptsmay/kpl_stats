@@ -17,6 +17,7 @@
           <router-link to="/heroes" class="nav-link" @click="menuOpen = false">英雄池</router-link>
           <router-link to="/win-lose" class="nav-link" @click="menuOpen = false">胜负对比</router-link>
           <router-link to="/records" class="nav-link" @click="menuOpen = false">比赛记录</router-link>
+          <router-link to="/ai-analysis" class="nav-link" @click="menuOpen = false">AI 分析</router-link>
         </div>
       </div>
     </nav>
