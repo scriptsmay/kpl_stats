@@ -78,6 +78,9 @@
         <div class="chart-title">vs {{ abilityData.player_position }}平均</div>
         <canvas ref="compareChartRef" class="compare-canvas"></canvas>
       </div>
+
+      <!-- AI 洞察 -->
+      <InsightSection :sections="aiInsights?.sections" filterId="abilities" title="能力洞察" />
     </div>
   </div>
 </template>
@@ -98,7 +101,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { getPlayerAbilities, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
+import { getPlayerAbilities, getSeasonNameMap, getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
+import InsightSection from './insights/InsightSection.vue';
 
 // 注册 Chart.js 组件
 Chart.register(
@@ -122,6 +126,7 @@ const positionAverages = ref(null);
 const radarChartRef = ref(null);
 const compareChartRef = ref(null);
 const seasonName = ref(DEFAULT_SEASON);
+const aiInsights = ref(null);
 
 let radarChart = null;
 let compareChart = null;
@@ -356,8 +361,14 @@ function renderCompareChart() {
   });
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadData();
+  try {
+    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(DEFAULT_SEASON);
+    }
+  } catch { /* insights unavailable */ }
 });
 
 onUnmounted(() => {

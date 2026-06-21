@@ -183,6 +183,24 @@ export const getPlayerCareer = () => fetchLatestGlobal('player-career-wuyan');
 export const getInsights = (season = DEFAULT_SEASON) =>
   fetchDerived('insights', season).then((payload) => payload.data);
 
+export async function getAiInsights(season = DEFAULT_SEASON) {
+  try {
+    const payload = await fetchDerived('ai-insights', season);
+    return payload.data;
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn('[getAiInsights] AI insights unavailable:', err.message);
+    }
+    return null;
+  }
+}
+
+export const getGrowthPath = (season = DEFAULT_SEASON) =>
+  fetchDerived('growth-path', season).then((payload) => payload.data);
+
+export const getTrendSummary = (season = DEFAULT_SEASON) =>
+  fetchDerived('trend-summary', season).then((payload) => payload.data);
+
 export const clearDataCache = () => {
   const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
   keys.forEach((k) => localStorage.removeItem(k));

@@ -40,6 +40,9 @@
         </div>
       </div>
 
+      <!-- AI 洞察 -->
+      <InsightSection :sections="aiInsights?.sections" filterId="hero_pool" title="英雄池洞察" />
+
       <!-- 使用排行柱状图 -->
       <div class="chart-container">
         <div class="chart-title">英雄使用次数排行</div>
@@ -55,6 +58,7 @@
               <tr>
                 <th class="col-rank">#</th>
                 <th class="col-hero">英雄</th>
+                <th class="col-maturity">成熟度</th>
                 <th class="col-num">使用</th>
                 <th class="col-num">胜场</th>
                 <th class="col-num">负场</th>
@@ -76,6 +80,9 @@
                       />
                       <span class="hero-name">{{ hero.hero_name }}</span>
                     </div>
+                  </td>
+                  <td class="col-maturity">
+                    <HeroMaturityBadge :maturity="hero.maturity" />
                   </td>
                   <td class="col-num">{{ hero.total_matches }}</td>
                   <td class="col-num text-success">{{ hero.win_matches }}</td>
@@ -99,7 +106,7 @@
                   </td>
                 </tr>
                 <tr v-if="expandedHero === hero.hero_name && heroBattles[hero.hero_name]" class="hero-detail-row">
-                  <td colspan="7">
+                  <td colspan="8">
                     <div class="hero-detail-panel">
                       <div class="hero-detail-header">
                         <div>
@@ -160,8 +167,12 @@ import {
   getPlayerHeroBattles,
   getHeroWinRate,
   getSeasonNameMap,
+  getAiInsights,
+  getInsights,
   DEFAULT_SEASON,
 } from '../api/github-data';
+import InsightSection from './insights/InsightSection.vue';
+import HeroMaturityBadge from './insights/HeroMaturityBadge.vue';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -172,6 +183,7 @@ const leagueHeroes = ref([]);
 const heroBattles = ref({});
 const expandedHero = ref(null);
 const seasonName = ref(DEFAULT_SEASON);
+const aiInsights = ref(null);
 
 const barChartRef = ref(null);
 const compareChartRef = ref(null);
@@ -378,7 +390,15 @@ function initCompareChart() {
   });
 }
 
-onMounted(() => loadData());
+onMounted(async () => {
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(DEFAULT_SEASON);
+    }
+  } catch { /* insights unavailable */ }
+});
 onUnmounted(() => {
   barChart?.destroy();
   compareChart?.destroy();
@@ -460,6 +480,9 @@ onUnmounted(() => {
 }
 .col-num {
   width: 72px;
+}
+.col-maturity {
+  width: 80px;
 }
 .col-action {
   width: 120px;

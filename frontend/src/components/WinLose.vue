@@ -110,15 +110,18 @@
         </div>
       </div>
 
-      <!-- 关键洞察 -->
+      <!-- AI 洞察 / 关键洞察 -->
       <div class="compare-section">
-        <div class="section-title">💡 关键洞察</div>
-        <div class="insight-cards">
-          <div class="insight-card" v-for="insight in insights" :key="insight.label">
-            <div class="insight-icon">{{ insight.icon }}</div>
-            <div class="insight-text">{{ insight.text }}</div>
+        <InsightSection v-if="aiInsights" :sections="aiInsights.sections" filterId="win_lose" title="胜负洞察" />
+        <template v-else>
+          <div class="section-title">💡 关键洞察</div>
+          <div class="insight-cards">
+            <div class="insight-card" v-for="insight in insights" :key="insight.label">
+              <div class="insight-icon">{{ insight.icon }}</div>
+              <div class="insight-text">{{ insight.text }}</div>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
     </div>
   </div>
@@ -127,8 +130,9 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { getPlayerWinStats, getPlayerLoseStats, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
+import { getPlayerWinStats, getPlayerLoseStats, getSeasonNameMap, getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
 import CompareCard from './CompareCard.vue';
+import InsightSection from './insights/InsightSection.vue';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -139,6 +143,7 @@ const loseData = ref(null);
 const damageChartRef = ref(null);
 const economyChartRef = ref(null);
 const seasonName = ref(DEFAULT_SEASON);
+const aiInsights = ref(null);
 
 let damageChart = null;
 let economyChart = null;
@@ -343,7 +348,15 @@ function renderEconomyChart() {
   });
 }
 
-onMounted(() => loadData());
+onMounted(async () => {
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(DEFAULT_SEASON);
+    }
+  } catch { /* insights unavailable */ }
+});
 
 onUnmounted(() => {
   damageChart?.destroy();

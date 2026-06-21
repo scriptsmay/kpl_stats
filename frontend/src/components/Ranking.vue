@@ -167,6 +167,9 @@
           />
         </div>
       </div>
+
+      <!-- AI 洞察 -->
+      <InsightSection :sections="aiInsights?.sections" filterId="ranking" title="排名洞察" />
     </div>
   </div>
 </template>
@@ -183,8 +186,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { getAllPlayerStats, getSeasonNameMap, DEFAULT_SEASON } from '../api/github-data';
+import { getAllPlayerStats, getSeasonNameMap, getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
 import RankCard from './RankCard.vue';
+import InsightSection from './insights/InsightSection.vue';
 
 // 注册 Chart.js 组件
 Chart.register(RadarController, RadialLinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
@@ -196,6 +200,7 @@ const rankRadarRef = ref(null);
 let rankChart = null;
 
 const seasonName = ref(DEFAULT_SEASON);
+const aiInsights = ref(null);
 
 const totalPlayers = computed(() => statsData.value?.total_players || 114);
 
@@ -304,7 +309,15 @@ function renderRankRadar() {
   });
 }
 
-onMounted(() => loadData());
+onMounted(async () => {
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(DEFAULT_SEASON);
+    }
+  } catch { /* insights unavailable */ }
+});
 
 onUnmounted(() => {
   rankChart?.destroy();
