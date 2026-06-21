@@ -120,7 +120,7 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
 
   const payload = await fetchRemoteJson(`derived/${resolvedSeason}/${pageKey}.json`);
   if (!validateDerivedPayload(payload, { ...current, current: resolvedSeason })) {
-    const fallback = getLastValidDerivedCache(cachePrefix, resolvedSeason);
+    const fallback = getLastValidDerivedCache(cachePrefix, resolvedSeason, current.build_id);
     if (fallback) return fallback;
     throw new Error(`${pageKey} 派生数据正在发布或版本不兼容`);
   }
@@ -128,13 +128,20 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
   return payload;
 }
 
-function getLastValidDerivedCache(cachePrefix, season) {
+function getLastValidDerivedCache(cachePrefix, season, buildId) {
   try {
-    return Object.keys(localStorage)
+    const candidates = Object.keys(localStorage)
       .filter((key) => key.startsWith(CACHE_PREFIX + cachePrefix))
       .map((key) => getLocalCache(key.slice(CACHE_PREFIX.length)))
-      .filter((payload) => payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.season === season)
-      .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')))[0];
+      .filter((payload) => payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.season === season);
+
+    if (buildId) {
+      const exact = candidates.find((p) => p?.build_id === buildId);
+      if (exact) return exact;
+    }
+
+    return candidates
+      .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')))[0] || null;
   } catch {
     return null;
   }

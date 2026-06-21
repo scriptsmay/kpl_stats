@@ -156,7 +156,7 @@ onMounted(loadData);
 
 <style scoped>
 .ai-analysis-page {
-  max-width: 1180px;
+  max-width: 1400px;
 }
 
 .ai-hero {
