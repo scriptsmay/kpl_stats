@@ -45,11 +45,10 @@ async function fetchJson(path, cacheKey) {
 }
 
 async function fetchRemoteJson(path, options = {}) {
-  const cacheBust = options.cacheBust ? `?_=${Date.now()}` : '';
-  const url = `${GITHUB_BASE}/${path}${cacheBust}`;
+  const url = `${GITHUB_BASE}/${path}`;
   const { data } = await axios.get(url, {
     timeout: 15000,
-    headers: options.cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+    headers: { 'Cache-Control': 'no-cache' },
   });
   return data;
 }
@@ -73,7 +72,7 @@ export async function getCurrentSeason() {
   const cached = getLocalCache(cacheKey);
 
   try {
-    const data = await fetchRemoteJson('latest/current-season.json', { cacheBust: true });
+    const data = await fetchRemoteJson('latest/current-season.json');
     if (!isCurrentSeasonPayload(data)) {
       throw new Error('当前赛季数据版本不兼容');
     }
