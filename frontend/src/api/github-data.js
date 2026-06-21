@@ -44,12 +44,9 @@ async function fetchJson(path, cacheKey) {
   return data;
 }
 
-async function fetchRemoteJson(path, options = {}) {
+async function fetchRemoteJson(path) {
   const url = `${GITHUB_BASE}/${path}`;
-  const { data } = await axios.get(url, {
-    timeout: 15000,
-    headers: { 'Cache-Control': 'no-cache' },
-  });
+  const { data } = await axios.get(url, { timeout: 15000 });
   return data;
 }
 
