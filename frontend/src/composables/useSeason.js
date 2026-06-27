@@ -53,7 +53,7 @@ export function useSeason() {
       ]);
       const playerSeasonData = playerSeasonsRes.data?.data || [];
 
-      // 用后端 nameMap 补充显示名（已由后端 /api/player/seasons 返回 season_name）
+      // 直接用选手参赛赛季 ID 构造列表，后端已返回 season_name
       availableSeasons.value = playerSeasonData.map((s) => ({
         tournament_id: s.season_id,
         tournament_name: s.season_name || s.season_id,
