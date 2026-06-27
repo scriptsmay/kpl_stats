@@ -128,11 +128,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, computed, onMounted, nextTick, onUnmounted, watch } from 'vue';
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { getPlayerWinStats, getPlayerLoseStats, getSeasonNameMap, getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
+import { getPlayerWinStats, getPlayerLoseStats, getSeasonNameMap, getAiInsights, getInsights } from '../api/github-data';
+import { useSeason } from '../composables/useSeason.js';
 import CompareCard from './CompareCard.vue';
 import InsightSection from './insights/InsightSection.vue';
+
+const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -142,7 +145,7 @@ const winData = ref(null);
 const loseData = ref(null);
 const damageChartRef = ref(null);
 const economyChartRef = ref(null);
-const seasonName = ref(DEFAULT_SEASON);
+const seasonName = ref(currentSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 let damageChart = null;
@@ -189,15 +192,16 @@ const insights = computed(() => {
 async function loadData() {
   loading.value = true;
   error.value = null;
+  const season = selectedSeason.value;
   try {
     const [winRes, loseRes, nameMap] = await Promise.all([
-      getPlayerWinStats(DEFAULT_SEASON),
-      getPlayerLoseStats(DEFAULT_SEASON),
+      getPlayerWinStats(season),
+      getPlayerLoseStats(season),
       getSeasonNameMap(),
     ]);
     winData.value = (winRes.data && winRes.data[0]) || {};
     loseData.value = (loseRes.data && loseRes.data[0]) || {};
-    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
+    seasonName.value = nameMap[season] || currentSeasonName.value || season;
   } catch (err) {
     console.error('加载胜负数据失败:', err);
     error.value = `加载失败：${err.message}`;
@@ -351,9 +355,20 @@ function renderEconomyChart() {
 onMounted(async () => {
   loadData();
   try {
-    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    aiInsights.value = await getAiInsights(selectedSeason.value);
     if (!aiInsights.value) {
-      aiInsights.value = await getInsights(DEFAULT_SEASON);
+      aiInsights.value = await getInsights(selectedSeason.value);
+    }
+  } catch { /* insights unavailable */ }
+});
+
+watch(selectedSeason, async () => {
+  await resolveCurrent();
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(selectedSeason.value);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(selectedSeason.value);
     }
   } catch { /* insights unavailable */ }
 });

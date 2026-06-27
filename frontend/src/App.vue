@@ -18,6 +18,9 @@
           <router-link to="/win-lose" class="nav-link" @click="menuOpen = false">胜负对比</router-link>
           <router-link to="/records" class="nav-link" @click="menuOpen = false">比赛记录</router-link>
           <router-link to="/ai-analysis" class="nav-link" @click="menuOpen = false">AI 分析</router-link>
+          <div class="nav-season">
+            <SeasonSelector />
+          </div>
         </div>
       </div>
     </nav>
@@ -44,6 +47,7 @@
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import BackToTop from './components/BackToTop.vue';
+import SeasonSelector from './components/SeasonSelector.vue';
 
 const menuOpen = ref(false);
 const route = useRoute();
@@ -51,3 +55,22 @@ const route = useRoute();
 // 路由切换时关闭菜单
 watch(() => route.path, () => { menuOpen.value = false; });
 </script>
+
+<style>
+.nav-season {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+  .nav-season {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    padding: 6px 0;
+  }
+}
+</style>

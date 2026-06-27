@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, computed, onMounted, nextTick, onUnmounted, watch } from 'vue';
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import {
   getPlayerHeroSummary,
@@ -169,10 +169,12 @@ import {
   getSeasonNameMap,
   getAiInsights,
   getInsights,
-  DEFAULT_SEASON,
 } from '../api/github-data';
+import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
 import HeroMaturityBadge from './insights/HeroMaturityBadge.vue';
+
+const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -182,7 +184,7 @@ const heroStats = ref([]);
 const leagueHeroes = ref([]);
 const heroBattles = ref({});
 const expandedHero = ref(null);
-const seasonName = ref(DEFAULT_SEASON);
+const seasonName = ref(currentSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 const barChartRef = ref(null);
@@ -247,12 +249,13 @@ function toggleDetail(heroName) {
 async function loadData() {
   loading.value = true;
   error.value = null;
+  const season = selectedSeason.value;
   try {
     const [heroRes, leagueRes, nameMap, battlesRes] = await Promise.all([
-      getPlayerHeroSummary(DEFAULT_SEASON),
-      getHeroWinRate(DEFAULT_SEASON),
+      getPlayerHeroSummary(season),
+      getHeroWinRate(season),
       getSeasonNameMap(),
-      getPlayerHeroBattles(DEFAULT_SEASON).catch(() => null),
+      getPlayerHeroBattles(season).catch(() => null),
     ]);
 
     if (heroRes.code === 200 && Array.isArray(heroRes.data)) {
@@ -267,7 +270,7 @@ async function loadData() {
       heroBattles.value = battlesRes.heroes || {};
     }
 
-    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
+    seasonName.value = nameMap[season] || currentSeasonName.value || season;
   } catch (err) {
     console.error('英雄池数据加载失败:', err);
     error.value = '数据加载失败，请检查网络后重试';
@@ -393,9 +396,20 @@ function initCompareChart() {
 onMounted(async () => {
   loadData();
   try {
-    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    aiInsights.value = await getAiInsights(selectedSeason.value);
     if (!aiInsights.value) {
-      aiInsights.value = await getInsights(DEFAULT_SEASON);
+      aiInsights.value = await getInsights(selectedSeason.value);
+    }
+  } catch { /* insights unavailable */ }
+});
+
+watch(selectedSeason, async () => {
+  await resolveCurrent();
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(selectedSeason.value);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(selectedSeason.value);
     }
   } catch { /* insights unavailable */ }
 });

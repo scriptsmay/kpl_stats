@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, computed, onMounted, nextTick, onUnmounted, watch } from 'vue';
 import {
   Chart,
   RadarController,
@@ -101,8 +101,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { getPlayerAbilities, getSeasonNameMap, getAiInsights, getInsights, DEFAULT_SEASON } from '../api/github-data';
+import { getPlayerAbilities, getSeasonNameMap, getAiInsights, getInsights } from '../api/github-data';
+import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
+
+const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
 
 // 注册 Chart.js 组件
 Chart.register(
@@ -125,7 +128,7 @@ const abilityData = ref(null);
 const positionAverages = ref(null);
 const radarChartRef = ref(null);
 const compareChartRef = ref(null);
-const seasonName = ref(DEFAULT_SEASON);
+const seasonName = ref(currentSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 let radarChart = null;
@@ -189,13 +192,14 @@ function getBarColor(value) {
 async function loadData() {
   loading.value = true;
   error.value = null;
+  const season = selectedSeason.value;
   try {
-    const [abilitiesRes, nameMap] = await Promise.all([getPlayerAbilities(DEFAULT_SEASON), getSeasonNameMap()]);
+    const [abilitiesRes, nameMap] = await Promise.all([getPlayerAbilities(season), getSeasonNameMap()]);
     console.log('abilitiesRes:', abilitiesRes);
     const playerData = (abilitiesRes.data && abilitiesRes.data[0]) || {};
     abilityData.value = playerData;
     positionAverages.value = abilitiesRes.position_averages?.[playerData?.player_position] || null;
-    seasonName.value = nameMap[DEFAULT_SEASON] || DEFAULT_SEASON;
+    seasonName.value = nameMap[season] || currentSeasonName.value || season;
   } catch (err) {
     console.error('加载能力数据失败:', err);
     error.value = `加载失败：${err.message}`;
@@ -364,9 +368,21 @@ function renderCompareChart() {
 onMounted(async () => {
   loadData();
   try {
-    aiInsights.value = await getAiInsights(DEFAULT_SEASON);
+    aiInsights.value = await getAiInsights(selectedSeason.value);
     if (!aiInsights.value) {
-      aiInsights.value = await getInsights(DEFAULT_SEASON);
+      aiInsights.value = await getInsights(selectedSeason.value);
+    }
+  } catch { /* insights unavailable */ }
+});
+
+// 赛季切换时重新加载数据
+watch(selectedSeason, async () => {
+  await resolveCurrent();
+  loadData();
+  try {
+    aiInsights.value = await getAiInsights(selectedSeason.value);
+    if (!aiInsights.value) {
+      aiInsights.value = await getInsights(selectedSeason.value);
     }
   } catch { /* insights unavailable */ }
 });

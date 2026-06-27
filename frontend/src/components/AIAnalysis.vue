@@ -82,23 +82,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
-  DEFAULT_SEASON,
   getAiInsights,
-  getCurrentSeason,
   getGrowthPath,
   getInsights,
   getTrendSummary,
 } from '../api/github-data';
+import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
+
+const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
 
 const loading = ref(false);
 const error = ref(null);
 const insights = ref(null);
 const growthPath = ref(null);
 const trendSummary = ref(null);
-const seasonName = ref(DEFAULT_SEASON);
+const seasonName = ref(currentSeasonName.value || '当前赛季');
 
 const sectionCount = computed(() => insights.value?.sections?.length || 0);
 const primarySampleSize = computed(() => {
@@ -125,20 +126,19 @@ function milestoneLabel(type) {
 async function loadData() {
   loading.value = true;
   error.value = null;
+  const season = selectedSeason.value;
   try {
-    const current = await getCurrentSeason();
-    seasonName.value = current.season_name || current.current;
-
     const [aiData, ruleData, growthData, trendData] = await Promise.all([
-      getAiInsights(DEFAULT_SEASON),
-      getInsights(DEFAULT_SEASON).catch(() => null),
-      getGrowthPath(DEFAULT_SEASON).catch(() => null),
-      getTrendSummary(DEFAULT_SEASON).catch(() => null),
+      getAiInsights(season),
+      getInsights(season).catch(() => null),
+      getGrowthPath(season).catch(() => null),
+      getTrendSummary(season).catch(() => null),
     ]);
 
     insights.value = aiData || ruleData;
     growthPath.value = growthData;
     trendSummary.value = trendData;
+    seasonName.value = currentSeasonName.value || season;
 
     if (!insights.value) {
       throw new Error('AI 分析数据暂不可用');
@@ -152,6 +152,11 @@ async function loadData() {
 }
 
 onMounted(loadData);
+
+watch(selectedSeason, async () => {
+  await resolveCurrent();
+  loadData();
+});
 </script>
 
 <style scoped>
