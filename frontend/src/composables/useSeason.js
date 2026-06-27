@@ -16,7 +16,7 @@ const resolvedInfo = ref(null);
 const seasonLoading = ref(false);
 const seasonError = ref(null);
 
-let initialized = false;
+let initPromise = null;
 
 function loadInitialSeason() {
   // 1. URL param
@@ -43,29 +43,34 @@ function persistSeason(season) {
 export function useSeason() {
   // ─── Load available seasons (once) ──────────────────────
   async function initSeasons() {
-    if (initialized && availableSeasons.value.length > 0) return;
-    initialized = true;
+    if (initPromise) return initPromise;
+    if (availableSeasons.value.length > 0) return;
+
     seasonLoading.value = true;
     seasonError.value = null;
-    try {
-      const [playerSeasonsRes] = await Promise.all([
-        getPlayerSeasons().catch(() => ({ data: { data: [] } })),
-      ]);
-      const playerSeasonData = playerSeasonsRes.data?.data || [];
+    initPromise = (async () => {
+      try {
+        const [playerSeasonsRes] = await Promise.all([
+          getPlayerSeasons().catch(() => ({ data: { data: [] } })),
+        ]);
+        const playerSeasonData = playerSeasonsRes.data?.data || [];
 
-      // 直接用选手参赛赛季 ID 构造列表，后端已返回 season_name
-      availableSeasons.value = playerSeasonData.map((s) => ({
-        tournament_id: s.season_id,
-        tournament_name: s.season_name || s.season_id,
-        display_name: s.season_name || s.season_id,
-        is_current: s.season_id === DEFAULT_SEASON,
-      }));
-    } catch (err) {
-      seasonError.value = err.message;
-      console.warn('初始化赛季列表失败:', err);
-    } finally {
-      seasonLoading.value = false;
-    }
+        availableSeasons.value = playerSeasonData.map((s) => ({
+          tournament_id: s.season_id,
+          tournament_name: s.season_name || s.season_id,
+          display_name: s.season_name || s.season_id,
+          is_current: s.season_id === DEFAULT_SEASON,
+        }));
+      } catch (err) {
+        seasonError.value = err.message;
+        console.warn('初始化赛季列表失败:', err);
+      } finally {
+        seasonLoading.value = false;
+        initPromise = null;
+      }
+    })();
+
+    return initPromise;
   }
 
   // ─── Resolve current selection ──────────────────────────
