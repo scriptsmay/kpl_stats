@@ -102,9 +102,7 @@
       </div>
 
       <!-- 大场数据 -->
-      <div class="data-category-tabs">
-        <div class="category-tab active">大场数据</div>
-      </div>
+      <div class="section-title">大场数据</div>
 
       <div class="summary-cards">
         <div class="summary-card">
@@ -126,8 +124,7 @@
       </div>
 
       <!-- 大场记录 -->
-      <div id="cooperation-match-container">
-        <div id="cooperation-match-anchor" class="scroll-anchor"></div>
+      <div>
         <div class="section-title">大场记录 (共{{ filteredMatchDetails.length }}场)</div>
         <div class="table-container">
           <table class="data-table">
@@ -313,7 +310,12 @@
       <button class="btn btn-primary" @click="loadData" :disabled="loading">重试</button>
     </div>
 
-    <!-- END -->
+    <!-- 空状态 -->
+    <div class="empty-state" v-else>
+      <div class="empty-icon">📊</div>
+      <p class="empty-text">暂无职业生涯数据</p>
+      <p class="empty-hint">数据正在收集中，请稍后再来...</p>
+    </div>
   </div>
 </template>
 
@@ -390,7 +392,7 @@ const getSeasonName = (seasonId) => {
 const filteredMatchDetails = computed(() => {
   if (!careerData.value) return [];
   // match_details 需要按照比赛日期降序排序
-  const matches = careerData.value.match_details.sort((a, b) => new Date(b.match_date) - new Date(a.match_date)) || [];
+  const matches = [...(careerData.value.match_details || [])].sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
   // 数据已经按赛季类型从 API 获取，不需要再过滤
   return matches;
 });
@@ -456,10 +458,32 @@ const getSeasonSummary = () => {
 };
 
 onMounted(async () => {
-  loadSeasonNameMap();
+  await loadSeasonNameMap();
   loadData();
 });
 </script>
 
 <style scoped>
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500, #6c757d);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gray-600, #495057);
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 14px;
+  color: var(--gray-400, #adb5bd);
+}
 </style>

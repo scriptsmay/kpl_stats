@@ -4,12 +4,8 @@
  * Persistence: URL ?season= > localStorage > 'current'.
  */
 import { ref, computed, watch } from 'vue';
-import {
-  DEFAULT_SEASON,
-  getAvailableSeasons,
-  resolveSeasonId,
-  getSeasonNameMap,
-} from '../api/github-data.js';
+import { DEFAULT_SEASON, resolveSeasonId, getAvailableSeasons } from '../api/github-data.js';
+import { getPlayerSeasons } from '../api/stats.js';
 
 const STORAGE_KEY = 'kpl_selected_season';
 
@@ -52,13 +48,17 @@ export function useSeason() {
     seasonLoading.value = true;
     seasonError.value = null;
     try {
-      const [seasons, nameMap] = await Promise.all([
-        getAvailableSeasons(),
-        getSeasonNameMap(),
+      const [playerSeasonsRes] = await Promise.all([
+        getPlayerSeasons().catch(() => ({ data: { data: [] } })),
       ]);
-      availableSeasons.value = seasons.map((s) => ({
-        ...s,
-        display_name: nameMap[s.tournament_id] || s.tournament_name || s.tournament_id,
+      const playerSeasonData = playerSeasonsRes.data?.data || [];
+
+      // 用后端 nameMap 补充显示名（已由后端 /api/player/seasons 返回 season_name）
+      availableSeasons.value = playerSeasonData.map((s) => ({
+        tournament_id: s.season_id,
+        tournament_name: s.season_name || s.season_id,
+        display_name: s.season_name || s.season_id,
+        is_current: s.season_id === DEFAULT_SEASON,
       }));
     } catch (err) {
       seasonError.value = err.message;

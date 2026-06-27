@@ -19,7 +19,33 @@
       <button class="btn btn-primary" @click="loadData">重试</button>
     </div>
 
-    <div v-else-if="winData && loseData">
+    <div v-else-if="winData && loseData && !hasData" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <p class="empty-text">该赛季暂无胜负数据</p>
+      <p class="empty-hint">数据正在收集中，请稍后再来...</p>
+    </div>
+
+    <div v-else-if="winData && loseData && hasData">
+      <!-- 概览卡片 -->
+      <div class="summary-cards winlose-overview">
+        <div class="summary-card">
+          <div class="summary-card-value win">{{ overview.totalWins }}</div>
+          <div class="summary-card-label">胜利对局</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card-value lose">{{ overview.totalLosses }}</div>
+          <div class="summary-card-label">失败对局</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card-value">{{ overview.totalMatches }}</div>
+          <div class="summary-card-label">总对局数</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card-value" :class="overview.winRateClass">{{ overview.winRate }}</div>
+          <div class="summary-card-label">胜率</div>
+        </div>
+      </div>
+
       <!-- KDA 对比 -->
       <div class="compare-section">
         <div class="section-title">📊 KDA 对比</div>
@@ -151,6 +177,28 @@ const aiInsights = ref(null);
 let damageChart = null;
 let economyChart = null;
 
+// 判断是否有实际数据
+const hasData = computed(() => {
+  if (!winData.value || !loseData.value) return false;
+  const w = winData.value;
+  const l = loseData.value;
+  // 至少有一个有效数值字段才认为有数据
+  return (w.total_matches > 0) || (l.total_matches > 0) || (w.avg_kills > 0) || (l.avg_kills > 0);
+});
+
+// 概览统计
+const overview = computed(() => {
+  const w = winData.value || {};
+  const l = loseData.value || {};
+  const totalWins = w.total_matches || 0;
+  const totalLosses = l.total_matches || 0;
+  const totalMatches = totalWins + totalLosses;
+  const winRate = totalMatches > 0 ? ((totalWins / totalMatches) * 100).toFixed(1) + '%' : '-';
+  const winRateNum = totalMatches > 0 ? (totalWins / totalMatches) * 100 : 0;
+  const winRateClass = winRateNum >= 50 ? 'win' : 'lose';
+  return { totalWins, totalLosses, totalMatches, winRate, winRateClass };
+});
+
 const insights = computed(() => {
   if (!winData.value || !loseData.value) return [];
   const w = winData.value;
@@ -220,6 +268,7 @@ function renderDamageChart() {
   if (damageChart) damageChart.destroy();
 
   const labels = ['场均英雄伤害', '场均承伤', '场均治疗量', '团战平均伤害', '团战平均承伤'];
+  const damageFields = ['avg_hurt_to_hero', 'avg_be_hurt_by_hero', 'avg_heal_count', 'avg_big_fight_damage', 'avg_big_fight_damage_taken'];
 
   damageChart = new Chart(damageChartRef.value, {
     type: 'bar',
@@ -228,13 +277,7 @@ function renderDamageChart() {
       datasets: [
         {
           label: '胜利',
-          data: [
-            winData.value.avg_hurt_to_hero || 0,
-            winData.value.avg_be_hurt_by_hero || 0,
-            winData.value.avg_heal_count || 0,
-            winData.value.avg_big_fight_damage || 0,
-            winData.value.avg_big_fight_damage_taken || 0,
-          ],
+          data: damageFields.map(f => winData.value[f] || 0),
           backgroundColor: 'rgba(40, 167, 69, 0.75)',
           borderColor: '#28a745',
           borderWidth: 1,
@@ -242,13 +285,7 @@ function renderDamageChart() {
         },
         {
           label: '失败',
-          data: [
-            loseData.value.avg_hurt_to_hero || 0,
-            loseData.value.avg_be_hurt_by_hero || 0,
-            loseData.value.avg_heal_count || 0,
-            loseData.value.avg_big_fight_damage || 0,
-            loseData.value.avg_big_fight_damage_taken || 0,
-          ],
+          data: damageFields.map(f => loseData.value[f] || 0),
           backgroundColor: 'rgba(220, 53, 69, 0.75)',
           borderColor: '#dc3545',
           borderWidth: 1,
@@ -264,7 +301,7 @@ function renderDamageChart() {
         x: {
           beginAtZero: true,
           ticks: {
-            callback: (v) => (v / 1000).toFixed(0) + 'k',
+            callback: (v) => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v,
             font: { size: 11 },
           },
           grid: { color: 'rgba(0,0,0,0.04)' },
@@ -278,7 +315,16 @@ function renderDamageChart() {
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}`,
+            label: (ctx) => {
+              const val = ctx.raw;
+              const field = damageFields[ctx.dataIndex];
+              const other = ctx.datasetIndex === 0
+                ? (loseData.value[field] || 0)
+                : (winData.value[field] || 0);
+              const diff = val - other;
+              const pct = other > 0 ? ((diff / other) * 100).toFixed(1) : '—';
+              return `${ctx.dataset.label}: ${val.toLocaleString()} (${diff >= 0 ? '+' : ''}${pct}%)`;
+            },
           },
         },
       },
@@ -291,6 +337,7 @@ function renderEconomyChart() {
   if (economyChart) economyChart.destroy();
 
   const labels = ['场均经济', '10分钟经济', '10分钟经济差', '分均经济'];
+  const economyFields = ['avg_gold', 'avg_economy_10min', 'avg_economy_diff_10min', null]; // null = computed
 
   economyChart = new Chart(economyChartRef.value, {
     type: 'bar',
@@ -331,8 +378,13 @@ function renderEconomyChart() {
       maintainAspectRatio: false,
       scales: {
         x: {
-          beginAtZero: true,
-          ticks: { font: { size: 11 } },
+          ticks: {
+            callback: (v) => {
+              if (Math.abs(v) >= 1000) return (v / 1000).toFixed(1) + 'k';
+              return v;
+            },
+            font: { size: 11 },
+          },
           grid: { color: 'rgba(0,0,0,0.04)' },
         },
         y: { grid: { display: false }, ticks: { font: { size: 12 } } },
@@ -344,7 +396,19 @@ function renderEconomyChart() {
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}`,
+            label: (ctx) => {
+              const val = ctx.raw;
+              const other = ctx.datasetIndex === 0
+                ? (loseData.value[economyFields[ctx.dataIndex]] || 0)
+                : (winData.value[economyFields[ctx.dataIndex]] || 0);
+              // 分均经济是计算值，不做对比
+              if (ctx.dataIndex === 3) {
+                return `${ctx.dataset.label}: ${val.toLocaleString()}/min`;
+              }
+              const diff = val - other;
+              const pct = other > 0 ? ((diff / other) * 100).toFixed(1) : '—';
+              return `${ctx.dataset.label}: ${val.toLocaleString()} (${diff >= 0 ? '+' : ''}${pct}%)`;
+            },
           },
         },
       },
@@ -448,5 +512,41 @@ onUnmounted(() => {
   .chart-canvas {
     height: 260px !important;
   }
+}
+
+@media (max-width: 480px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-canvas {
+    height: 220px !important;
+  }
+}
+
+.winlose-overview {
+  margin-bottom: var(--spacing-xl);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xxxl) var(--spacing-lg);
+  color: var(--gray-500);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-sm);
+}
+
+.empty-hint {
+  font-size: var(--font-size-sm);
+  color: var(--gray-400);
 }
 </style>

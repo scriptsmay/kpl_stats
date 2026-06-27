@@ -13,6 +13,7 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
+    meta: { title: '职业生涯' },
   },
   {
     path: '/abilities',

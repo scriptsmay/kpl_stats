@@ -44,7 +44,14 @@ const diffText = computed(() => {
   if (isNaN(d) || d === 0) return '持平';
   const sign = d > 0 ? '+' : '';
   const formatted = Math.abs(d) >= 100 ? Math.round(d).toLocaleString() : d.toFixed(2);
-  return `${sign}${d > 0 ? formatted : formatted}`;
+  // 百分比差异（基于 lose 值）
+  const loseNum = Number(props.lose);
+  let pctStr = '';
+  if (!isNaN(loseNum) && loseNum !== 0) {
+    const pct = ((d / Math.abs(loseNum)) * 100).toFixed(1);
+    pctStr = ` (${sign}${pct}%)`;
+  }
+  return `${sign}${formatted}${pctStr}`;
 });
 
 const diffClass = computed(() => {
