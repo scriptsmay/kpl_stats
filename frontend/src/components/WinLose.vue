@@ -183,15 +183,15 @@ const hasData = computed(() => {
   const w = winData.value;
   const l = loseData.value;
   // 至少有一个有效数值字段才认为有数据
-  return (w.total_matches > 0) || (l.total_matches > 0) || (w.avg_kills > 0) || (l.avg_kills > 0);
+  return (w.win_matches > 0) || (l.lose_matches > 0) || (w.avg_kills > 0) || (l.avg_kills > 0);
 });
 
 // 概览统计
 const overview = computed(() => {
   const w = winData.value || {};
   const l = loseData.value || {};
-  const totalWins = w.total_matches || 0;
-  const totalLosses = l.total_matches || 0;
+  const totalWins = w.win_matches || 0;
+  const totalLosses = l.lose_matches || 0;
   const totalMatches = totalWins + totalLosses;
   const winRate = totalMatches > 0 ? ((totalWins / totalMatches) * 100).toFixed(1) + '%' : '-';
   const winRateNum = totalMatches > 0 ? (totalWins / totalMatches) * 100 : 0;
