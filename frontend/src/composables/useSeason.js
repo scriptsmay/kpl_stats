@@ -4,7 +4,7 @@
  * Persistence: URL ?season= > localStorage > 'current'.
  */
 import { ref, computed, watch } from 'vue';
-import { DEFAULT_SEASON, resolveSeasonId, getAvailableSeasons } from '../api/github-data.js';
+import { DEFAULT_SEASON, resolveSeasonId, getAvailableSeasons, getCurrentSeason } from '../api/github-data.js';
 import { getPlayerSeasons } from '../api/stats.js';
 
 const STORAGE_KEY = 'kpl_selected_season';
@@ -50,16 +50,18 @@ export function useSeason() {
     seasonError.value = null;
     initPromise = (async () => {
       try {
-        const [playerSeasonsRes] = await Promise.all([
+        const [playerSeasonsRes, currentSeason] = await Promise.all([
           getPlayerSeasons().catch(() => ({ data: { data: [] } })),
+          getCurrentSeason().catch(() => null),
         ]);
         const playerSeasonData = playerSeasonsRes.data?.data || [];
+        const currentId = currentSeason?.current || null;
 
         availableSeasons.value = playerSeasonData.map((s) => ({
           tournament_id: s.season_id,
           tournament_name: s.season_name || s.season_id,
           display_name: s.season_name || s.season_id,
-          is_current: s.season_id === DEFAULT_SEASON,
+          is_current: currentId ? s.season_id === currentId : s.season_id === DEFAULT_SEASON,
         }));
       } catch (err) {
         seasonError.value = err.message;

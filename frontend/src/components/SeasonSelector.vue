@@ -29,7 +29,7 @@
           <span class="season-option-name">{{
             currentSeasonName || '当前赛季'
           }}</span>
-          <span v-if="isCurrentSeason" class="season-tag current">当前</span>
+          <span v-if="isCurrentSeason" class="season-tag latest">最新</span>
         </div>
         <div class="season-divider" v-if="historicalSeasons.length"></div>
         <div
