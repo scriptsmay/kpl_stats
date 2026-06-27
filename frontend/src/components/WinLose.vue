@@ -157,14 +157,14 @@ const insights = computed(() => {
   const l = loseData.value;
   const result = [];
 
-  const kdaDiff = ((w.avg_kda || 0) - (l.avg_kda || 0)).toFixed(1);
+  const kdaDiff = (w.avg_kda || 0) - (l.avg_kda || 0);
   if (kdaDiff > 0) {
-    result.push({ icon: '📈', text: `获胜时 KDA 比失败时高 ${kdaDiff}，稳定性是关键` });
+    result.push({ icon: '📈', text: `获胜时 KDA 比失败时高 ${kdaDiff.toFixed(1)}，稳定性是关键` });
   }
 
-  const deathDiff = ((l.avg_deaths || 0) - (w.avg_deaths || 0)).toFixed(1);
+  const deathDiff = (l.avg_deaths || 0) - (w.avg_deaths || 0);
   if (deathDiff > 0.5) {
-    result.push({ icon: '💀', text: `失败时场均死亡多 ${deathDiff} 次，减少失误能显著提升胜率` });
+    result.push({ icon: '💀', text: `失败时场均死亡多 ${deathDiff.toFixed(1)} 次，减少失误能显著提升胜率` });
   }
 
   if ((w.avg_economy_diff_10min || 0) > 0 && (l.avg_economy_diff_10min || 0) < 0) {
@@ -174,11 +174,11 @@ const insights = computed(() => {
     });
   }
 
-  const fightDiff = ((w.avg_big_fight_damage || 0) - (l.avg_big_fight_damage || 0)).toFixed(0);
+  const fightDiff = (w.avg_big_fight_damage || 0) - (l.avg_big_fight_damage || 0);
   if (fightDiff > 0) {
     result.push({
       icon: '🔥',
-      text: `获胜时大型团战平均伤害多 ${Number(fightDiff).toLocaleString()}，团战表现直接影响胜负`,
+      text: `获胜时大型团战平均伤害多 ${Math.round(fightDiff).toLocaleString()}，团战表现直接影响胜负`,
     });
   }
 

@@ -308,9 +308,9 @@
     </div>
 
     <!-- 错误状态 -->
-    <div class="error-message" v-if="error">
+    <div class="error-message" v-else-if="error">
       <p>{{ error }}</p>
-      <button class="btn btn-primary" @click="loadData">重试</button>
+      <button class="btn btn-primary" @click="loadData" :disabled="loading">重试</button>
     </div>
 
     <!-- END -->
@@ -344,7 +344,6 @@ const loadData = async () => {
     const res = await getCareerData(seasonFilter.value);
     careerData.value = res.data.data;
     currentPage.value = 1;
-    console.log('数据加载成功', seasonFilter.value, careerData.value);
   } catch (err) {
     console.error('加载失败', err);
     error.value = `加载失败：${err.message}`;
@@ -358,10 +357,8 @@ const loadSeasonNameMap = async () => {
   try {
     const res = await getSeasonNameMap();
     seasonNameMap.value = res.data.data || {};
-    console.log('赛季名称映射已加载', seasonNameMap.value);
   } catch (err) {
     console.error('加载赛季名称映射失败', err);
-    // 使用默认映射作为降级
     seasonNameMap.value = {
       KCC2025: '2025 挑战者杯',
       KPL2026S1: '2026 年春季赛',
