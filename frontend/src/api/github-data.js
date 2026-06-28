@@ -260,16 +260,11 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
     return cached;
   }
 
-  // Try current-season derived path, then historical
-  const currentPath = `derived/${resolvedSeason}/${pageKey}.json`;
-  const historicalPath = `seasons/${resolvedSeason}/derived/${pageKey}.json`;
+  const derivedPath = isHistorical
+    ? `seasons/${resolvedSeason}/derived/${pageKey}.json`
+    : `derived/${resolvedSeason}/${pageKey}.json`;
 
-  let payload;
-  if (isHistorical) {
-    payload = await fetchRemoteJsonOrNull(currentPath) || await fetchRemoteJsonOrNull(historicalPath);
-  } else {
-    payload = await fetchRemoteJsonOrNull(currentPath);
-  }
+  const payload = await fetchRemoteJsonOrNull(derivedPath);
 
   if (!payload) {
     // Try last valid cache as final fallback
