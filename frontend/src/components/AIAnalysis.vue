@@ -18,7 +18,9 @@
     <div v-else-if="insights">
       <section class="ai-hero">
         <div>
-          <div class="ai-stage" v-if="insights.growth_stage">{{ insights.growth_stage }}</div>
+          <div class="ai-stage" v-if="insights.growth_stage">
+            {{ insights.growth_stage }}
+          </div>
           <h2>{{ insights.headline }}</h2>
           <p>{{ insights.summary }}</p>
         </div>
@@ -45,7 +47,7 @@
 
       <InsightSection :sections="insights.sections" title="全部洞察" />
 
-      <section class="growth-section" v-if="growthPath">
+      <!-- <section class="growth-section" v-if="growthPath">
         <div class="section-title">成长路径</div>
         <div class="growth-summary">{{ growthPath.summary }}</div>
 
@@ -58,9 +60,9 @@
             </div>
           </div>
         </div>
-      </section>
+      </section> -->
 
-      <section class="trend-section" v-if="heroPoolTrend">
+      <!-- <section class="trend-section" v-if="heroPoolTrend">
         <div class="section-title">英雄池趋势</div>
         <div class="trend-grid">
           <div class="trend-item">
@@ -69,14 +71,19 @@
           </div>
           <div class="trend-item">
             <span class="trend-label">英雄数变化</span>
-            <span class="trend-value">{{ heroPoolTrend.hero_count_oldest }} → {{ heroPoolTrend.hero_count_latest }}</span>
+            <span class="trend-value"
+              >{{ heroPoolTrend.hero_count_oldest }} →
+              {{ heroPoolTrend.hero_count_latest }}</span
+            >
           </div>
           <div class="trend-item">
             <span class="trend-label">新增英雄</span>
-            <span class="trend-value">{{ heroPoolTrend.new_heroes?.join('、') || '-' }}</span>
+            <span class="trend-value">{{
+              heroPoolTrend.new_heroes?.join('、') || '-'
+            }}</span>
           </div>
         </div>
-      </section>
+      </section> -->
     </div>
   </div>
 </template>
@@ -110,17 +117,25 @@ const confidenceText = computed(() => {
   const confidence = insights.value?.sections?.[0]?.confidence;
   return { low: '低', medium: '中', high: '高' }[confidence] || '-';
 });
-const trendSnapshots = computed(() => trendSummary.value?.snapshots_available || '-');
-const heroPoolTrend = computed(() => trendSummary.value?.trends?.hero_pool?.['7d'] || trendSummary.value?.trends?.hero_pool?.['3d']);
+const trendSnapshots = computed(
+  () => trendSummary.value?.snapshots_available || '-',
+);
+const heroPoolTrend = computed(
+  () =>
+    trendSummary.value?.trends?.hero_pool?.['7d'] ||
+    trendSummary.value?.trends?.hero_pool?.['3d'],
+);
 
 function milestoneLabel(type) {
-  return {
-    first_appear: '首秀',
-    season_start: '赛季',
-    hero_pool: '英雄池',
-    role_signal: '角色信号',
-    ability_signal: '能力信号',
-  }[type] || '节点';
+  return (
+    {
+      first_appear: '首秀',
+      season_start: '赛季',
+      hero_pool: '英雄池',
+      role_signal: '角色信号',
+      ability_signal: '能力信号',
+    }[type] || '节点'
+  );
 }
 
 async function loadData() {
@@ -167,7 +182,11 @@ watch(selectedSeason, async () => {
 .ai-hero {
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-xl);
-  background: linear-gradient(135deg, rgba(30, 60, 114, 0.08), rgba(78, 205, 196, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(30, 60, 114, 0.08),
+    rgba(78, 205, 196, 0.08)
+  );
   border: 1px solid var(--gray-200);
   border-radius: var(--border-radius-md);
 }

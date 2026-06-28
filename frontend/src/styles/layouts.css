@@ -4,6 +4,19 @@
   display: none;
 }
 
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+.mb-xl {
+  margin-bottom: var(--spacing-xl);
+}
+.mb-xxl {
+  margin-bottom: var(--spacing-xxl);
+}
+.mb-xxxl {
+  margin-bottom: var(--spacing-xxxl);
+}
+
 /* 应用包装器 */
 .app-wrapper {
   background: var(--bg-gradient);
@@ -125,7 +138,7 @@
   border-bottom: 3px solid var(--primary-medium);
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-xxxl);
+  /* margin-bottom: var(--spacing-xxxl); */
   padding-bottom: var(--spacing-xl);
   display: flex;
 }
@@ -228,7 +241,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xl);
+    /* margin-bottom: var(--spacing-xl); */
     padding-bottom: var(--spacing-md);
   }
 

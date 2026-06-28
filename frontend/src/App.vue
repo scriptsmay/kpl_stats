@@ -18,6 +18,9 @@
           <router-link to="/" class="nav-link" @click="menuOpen = false"
             >生涯数据</router-link
           >
+          <router-link to="/records" class="nav-link" @click="menuOpen = false"
+            >比赛记录</router-link
+          >
           <router-link
             to="/abilities"
             class="nav-link"
@@ -33,16 +36,13 @@
           <router-link to="/win-lose" class="nav-link" @click="menuOpen = false"
             >胜负对比</router-link
           >
-          <router-link to="/records" class="nav-link" @click="menuOpen = false"
-            >比赛记录</router-link
-          >
           <router-link
             to="/ai-analysis"
             class="nav-link"
             @click="menuOpen = false"
             >AI 分析</router-link
           >
-          <div class="nav-season">
+          <div class="nav-season" v-if="isShowSeasonSelector">
             <SeasonSelector />
           </div>
         </div>
@@ -77,11 +77,29 @@ import SeasonSelector from './components/SeasonSelector.vue';
 const menuOpen = ref(false);
 const route = useRoute();
 
+const isShowSeasonSelector = ref(false);
+
+// 显示赛季选择器的路由
+const showSeasonPath = [
+  '/abilities',
+  '/ranking',
+  '/heroes',
+  '/win-lose',
+  '/ai-analysis',
+];
+
 // 路由切换时关闭菜单
 watch(
   () => route.path,
   () => {
     menuOpen.value = false;
+
+    // 根据路由显示赛季选择器
+    if (showSeasonPath.includes(route.path)) {
+      isShowSeasonSelector.value = true;
+    } else {
+      isShowSeasonSelector.value = false;
+    }
   },
 );
 </script>
