@@ -174,7 +174,7 @@ import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
 import HeroMaturityBadge from './insights/HeroMaturityBadge.vue';
 
-const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -184,7 +184,7 @@ const heroStats = ref([]);
 const leagueHeroes = ref([]);
 const heroBattles = ref({});
 const expandedHero = ref(null);
-const seasonName = ref(currentSeasonName.value || '当前赛季');
+const seasonName = ref(resolvedSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 const barChartRef = ref(null);
@@ -270,7 +270,7 @@ async function loadData() {
       heroBattles.value = battlesRes.heroes || {};
     }
 
-    seasonName.value = nameMap[season] || currentSeasonName.value || season;
+    seasonName.value = nameMap[season] || resolvedSeasonName.value || season;
   } catch (err) {
     console.error('英雄池数据加载失败:', err);
     error.value = '数据加载失败，请检查网络后重试';

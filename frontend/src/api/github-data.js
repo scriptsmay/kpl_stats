@@ -320,7 +320,8 @@ export const getPlayerAbilities = (season = DEFAULT_SEASON) =>
 export const getAllPlayerStats = (season = DEFAULT_SEASON) =>
   derivedData('ranking', season, () => fetchLatest('all-player-stats', season));
 
-export const getHeroWinRate = (season = DEFAULT_SEASON) => fetchLatest('hero-win-rate', season);
+export const getHeroWinRate = (season = DEFAULT_SEASON) =>
+  derivedData('hero-win-rate', season, () => fetchLatest('hero-win-rate', season));
 
 export const getPlayerHeroSummary = (season = DEFAULT_SEASON) =>
   derivedData('heroes', season, async () => fetchLatest('player-hero-summary', season)).then((data) => {
@@ -347,10 +348,10 @@ export const getPlayerLoseStats = (season = DEFAULT_SEASON) =>
   });
 
 export const getTeamDamageDistribution = (season = DEFAULT_SEASON) =>
-  fetchLatest('team-damage-distribution', season);
+  derivedData('team-damage-distribution', season, () => fetchLatest('team-damage-distribution', season));
 
 export const getWinAffinityAnalysis = (season = DEFAULT_SEASON) =>
-  fetchLatest('win-affinity-analysis', season);
+  derivedData('win-affinity-analysis', season, () => fetchLatest('win-affinity-analysis', season));
 
 export const getPlayerCareer = (season = DEFAULT_SEASON) => {
   // Career data: try season-specific first, then global

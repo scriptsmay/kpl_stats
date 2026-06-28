@@ -105,7 +105,7 @@ import { getPlayerAbilities, getSeasonNameMap, getAiInsights, getInsights } from
 import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
 
-const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
 
 // 注册 Chart.js 组件
 Chart.register(
@@ -128,7 +128,7 @@ const abilityData = ref(null);
 const positionAverages = ref(null);
 const radarChartRef = ref(null);
 const compareChartRef = ref(null);
-const seasonName = ref(currentSeasonName.value || '当前赛季');
+const seasonName = ref(resolvedSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 let radarChart = null;
@@ -199,7 +199,7 @@ async function loadData() {
     const playerData = (abilitiesRes.data && abilitiesRes.data[0]) || {};
     abilityData.value = playerData;
     positionAverages.value = abilitiesRes.position_averages?.[playerData?.player_position] || null;
-    seasonName.value = nameMap[season] || currentSeasonName.value || season;
+    seasonName.value = nameMap[season] || resolvedSeasonName.value || season;
   } catch (err) {
     console.error('加载能力数据失败:', err);
     error.value = `加载失败：${err.message}`;

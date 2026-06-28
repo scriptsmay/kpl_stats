@@ -191,7 +191,7 @@ import { useSeason } from '../composables/useSeason.js';
 import RankCard from './RankCard.vue';
 import InsightSection from './insights/InsightSection.vue';
 
-const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
 
 // 注册 Chart.js 组件
 Chart.register(RadarController, RadialLinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
@@ -202,7 +202,7 @@ const statsData = ref(null);
 const rankRadarRef = ref(null);
 let rankChart = null;
 
-const seasonName = ref(currentSeasonName.value || '当前赛季');
+const seasonName = ref(resolvedSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 const totalPlayers = computed(() => statsData.value?.total_players || 114);
@@ -224,7 +224,7 @@ async function loadData() {
     const [statsRes, nameMap] = await Promise.all([getAllPlayerStats(season), getSeasonNameMap()]);
     const tmpList = statsRes.data || [];
     statsData.value = tmpList.length ? tmpList[0] : null;
-    seasonName.value = nameMap[season] || currentSeasonName.value || season;
+    seasonName.value = nameMap[season] || resolvedSeasonName.value || season;
   } catch (err) {
     console.error('加载排名数据失败:', err);
     error.value = `加载失败：${err.message}`;

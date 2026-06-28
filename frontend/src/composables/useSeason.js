@@ -12,6 +12,7 @@ const STORAGE_KEY = 'kpl_selected_season';
 // ─── Shared singleton state ─────────────────────────────────
 const selectedSeason = ref(loadInitialSeason());
 const availableSeasons = ref([]);
+const currentSeasonInfo = ref(null); // actual current season from remote (independent of selection)
 const resolvedInfo = ref(null);
 const seasonLoading = ref(false);
 const seasonError = ref(null);
@@ -57,6 +58,15 @@ export function useSeason() {
         const playerSeasonData = playerSeasonsRes.data?.data || [];
         const currentId = currentSeason?.current || null;
 
+        // Store actual current season info (independent of user selection)
+        if (currentSeason) {
+          currentSeasonInfo.value = {
+            seasonId: currentSeason.current,
+            seasonName: currentSeason.season_name || currentSeason.current,
+            buildId: currentSeason.build_id || null,
+          };
+        }
+
         availableSeasons.value = playerSeasonData.map((s) => ({
           tournament_id: s.season_id,
           tournament_name: s.season_name || s.season_id,
@@ -91,17 +101,22 @@ export function useSeason() {
     }
   }
 
-  // ─── Computed ───────────────────────────────────────────
-  const currentSeasonId = computed(() => resolvedInfo.value?.seasonId || selectedSeason.value);
-  const currentSeasonName = computed(() => {
+  // ─── Computed: resolved info for the SELECTED season ─────
+  const resolvedSeasonId = computed(() => resolvedInfo.value?.seasonId || selectedSeason.value);
+  const resolvedSeasonName = computed(() => {
     if (resolvedInfo.value?.sourceType === 'current') {
       return resolvedInfo.value.seasonName;
     }
     const found = availableSeasons.value.find((s) => s.tournament_id === selectedSeason.value);
     return found?.display_name || resolvedInfo.value?.seasonName || selectedSeason.value;
   });
-  const isCurrentSeason = computed(() => resolvedInfo.value?.sourceType === 'current');
+  const isSelectedCurrent = computed(() => resolvedInfo.value?.sourceType === 'current');
   const seasonBuildId = computed(() => resolvedInfo.value?.buildId || null);
+
+  // ─── Computed: actual current season (always from remote) ─
+  const currentSeasonId = computed(() => currentSeasonInfo.value?.seasonId || null);
+  const currentSeasonName = computed(() => currentSeasonInfo.value?.seasonName || null);
+  const currentSeasonBuildId = computed(() => currentSeasonInfo.value?.buildId || null);
 
   // ─── Actions ────────────────────────────────────────────
   function setSeason(season) {
@@ -124,13 +139,18 @@ export function useSeason() {
     selectedSeason,
     availableSeasons,
     resolvedInfo,
+    currentSeasonInfo,
     seasonLoading,
     seasonError,
-    // Computed
+    // Computed — resolved (selected season)
+    resolvedSeasonId,
+    resolvedSeasonName,
+    isSelectedCurrent,
+    resolvedBuildId: seasonBuildId,
+    // Computed — actual current season (from remote, independent of selection)
     currentSeasonId,
     currentSeasonName,
-    isCurrentSeason,
-    seasonBuildId,
+    currentSeasonBuildId,
     // Actions
     setSeason,
     initSeasons,

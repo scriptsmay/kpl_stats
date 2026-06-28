@@ -161,7 +161,7 @@ import { useSeason } from '../composables/useSeason.js';
 import CompareCard from './CompareCard.vue';
 import InsightSection from './insights/InsightSection.vue';
 
-const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -171,7 +171,7 @@ const winData = ref(null);
 const loseData = ref(null);
 const damageChartRef = ref(null);
 const economyChartRef = ref(null);
-const seasonName = ref(currentSeasonName.value || '当前赛季');
+const seasonName = ref(resolvedSeasonName.value || '当前赛季');
 const aiInsights = ref(null);
 
 let damageChart = null;
@@ -249,7 +249,7 @@ async function loadData() {
     ]);
     winData.value = (winRes.data && winRes.data[0]) || {};
     loseData.value = (loseRes.data && loseRes.data[0]) || {};
-    seasonName.value = nameMap[season] || currentSeasonName.value || season;
+    seasonName.value = nameMap[season] || resolvedSeasonName.value || season;
   } catch (err) {
     console.error('加载胜负数据失败:', err);
     error.value = `加载失败：${err.message}`;

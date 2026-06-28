@@ -92,14 +92,14 @@ import {
 import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
 
-const { selectedSeason, currentSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
 
 const loading = ref(false);
 const error = ref(null);
 const insights = ref(null);
 const growthPath = ref(null);
 const trendSummary = ref(null);
-const seasonName = ref(currentSeasonName.value || '当前赛季');
+const seasonName = ref(resolvedSeasonName.value || '当前赛季');
 
 const sectionCount = computed(() => insights.value?.sections?.length || 0);
 const primarySampleSize = computed(() => {
@@ -138,7 +138,7 @@ async function loadData() {
     insights.value = aiData || ruleData;
     growthPath.value = growthData;
     trendSummary.value = trendData;
-    seasonName.value = currentSeasonName.value || season;
+    seasonName.value = resolvedSeasonName.value || season;
 
     if (!insights.value) {
       throw new Error('AI 分析数据暂不可用');

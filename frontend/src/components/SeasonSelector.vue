@@ -23,20 +23,22 @@
       <div v-if="isOpen" class="season-dropdown">
         <div
           class="season-option"
-          :class="{ active: isCurrentSeason }"
+          :class="{ active: isSelectedCurrent }"
           @click="selectSeason('current')"
         >
           <span class="season-option-name">{{
             currentSeasonName || '当前赛季'
           }}</span>
-          <span v-if="isCurrentSeason" class="season-tag latest">最新</span>
+          <span class="season-tag latest">最新</span>
         </div>
         <div class="season-divider" v-if="historicalSeasons.length"></div>
         <div
           v-for="s in historicalSeasons"
           :key="s.tournament_id"
           class="season-option"
-          :class="{ active: selectedSeason.value === s.tournament_id }"
+          :class="{
+            active: !isSelectedCurrent && selectedSeason === s.tournament_id,
+          }"
           @click="selectSeason(s.tournament_id)"
         >
           <span class="season-option-name">{{
@@ -60,8 +62,10 @@ defineProps({
 const {
   selectedSeason,
   availableSeasons,
+  resolvedSeasonId,
+  resolvedSeasonName,
+  isSelectedCurrent,
   currentSeasonName,
-  isCurrentSeason,
   seasonLoading: loading,
   setSeason,
   initSeasons,
@@ -75,11 +79,13 @@ const historicalSeasons = computed(() =>
 );
 
 const currentLabel = computed(() => {
-  if (isCurrentSeason.value) return currentSeasonName.value || '当前赛季';
+  if (isSelectedCurrent.value) return currentSeasonName.value || '当前赛季';
   const found = availableSeasons.value.find(
-    (s) => s.tournament_id === selectedSeason.value,
+    (s) => s.tournament_id === resolvedSeasonId.value,
   );
-  return found?.display_name || currentSeasonName.value || selectedSeason.value;
+  return (
+    found?.display_name || resolvedSeasonName.value || selectedSeason.value
+  );
 });
 
 function toggle() {
@@ -220,9 +226,9 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
-.season-tag.current {
+.season-tag.latest {
   background: #22c55e;
-  color: #000;
+  color: #fff;
 }
 
 .season-tag.history {
