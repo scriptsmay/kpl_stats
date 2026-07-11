@@ -53,7 +53,7 @@ const routes = [
     path: '/ai-analysis',
     name: 'AIAnalysis',
     component: AIAnalysis,
-    meta: { title: 'AI 分析' },
+    meta: { title: 'AI分析' },
   },
 ];
 

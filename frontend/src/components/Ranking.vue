@@ -2,7 +2,7 @@
   <div class="result-section ranking-page">
     <div class="result-header">
       <h1 class="result-title">📊 联盟数据排名</h1>
-      <p class="result-subtitle">无言在 KPL {{ seasonName }} 中的全方位数据对比</p>
+      <p class="result-subtitle">无言在 {{ seasonName }} 中的全方位数据对比</p>
     </div>
 
     <!-- 加载状态 -->

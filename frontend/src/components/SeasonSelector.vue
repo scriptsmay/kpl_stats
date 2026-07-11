@@ -130,7 +130,7 @@ onUnmounted(() => {
   color: inherit;
   font-size: 13px;
   font-weight: 500;
-  padding: 5px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   outline: none;
   transition:
@@ -178,7 +178,7 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 180px;
+  min-width: 240px;
   max-height: 320px;
   overflow-y: auto;
   background: #1e1e2e;

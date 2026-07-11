@@ -1,13 +1,13 @@
 <template>
   <div class="result-section ai-analysis-page">
     <div class="result-header">
-      <h1 class="result-title">AI 分析</h1>
+      <h1 class="result-title">AI分析</h1>
       <p class="result-subtitle">个人成长路径观察 · {{ seasonName }}</p>
     </div>
 
     <div class="loading" v-if="loading">
       <div class="loading-spinner"></div>
-      <div class="loading-text">正在加载 AI 分析...</div>
+      <div class="loading-text">正在加载 AI分析...</div>
     </div>
 
     <div class="error-message" v-else-if="error">
@@ -156,10 +156,10 @@ async function loadData() {
     seasonName.value = resolvedSeasonName.value || season;
 
     if (!insights.value) {
-      throw new Error('AI 分析数据暂不可用');
+      throw new Error('AI分析数据暂不可用');
     }
   } catch (err) {
-    console.error('加载 AI 分析失败:', err);
+    console.error('加载 AI分析失败:', err);
     error.value = `加载失败：${err.message}`;
   } finally {
     loading.value = false;

@@ -40,7 +40,7 @@
             to="/ai-analysis"
             class="nav-link"
             @click="menuOpen = false"
-            >AI 分析</router-link
+            >AI分析</router-link
           >
           <div class="nav-season" v-if="isShowSeasonSelector">
             <SeasonSelector />

@@ -6,7 +6,7 @@
   <div class="result-section abilities-page">
     <div class="result-header">
       <h1 class="result-title">🎯 选手能力画像</h1>
-      <p class="result-subtitle">基于 KPL 官方数据的 12 维能力评估 · {{ seasonName }}</p>
+      <p class="result-subtitle">基于KPL官方数据的12维能力评估 · {{ seasonName }}</p>
     </div>
 
     <!-- 加载状态 -->
