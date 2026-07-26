@@ -75,10 +75,13 @@ function isCurrentSeasonPayload(payload) {
 }
 
 function validateDerivedPayload(payload, season, buildId) {
+  // build_id 不参与强校验：current-season.json 与 derived/*.json 是两次独立 push，
+  // 天然会短暂不同步，把 build_id 当强校验会产生大量"派生数据版本不兼容"误报。
+  // build_id 仅用于 cacheKey 区分不同版本，避免旧缓存挡住新数据。
+  // 仍保留参数以兼容调用点。
   return (
     payload?.schema_version === SUPPORTED_SCHEMA_VERSION &&
-    payload?.season === season &&
-    (!buildId || payload?.build_id === buildId)
+    payload?.season === season
   );
 }
 
@@ -397,19 +400,22 @@ export const getAbilityTimeline = (seasonId) => {
 export const getSchedule = async (seasonId) => {
   if (!seasonId) throw new Error('[getSchedule] seasonId is required');
 
-  const cacheKey = `schedule.${seasonId}.v${SUPPORTED_SCHEMA_VERSION}`;
+  // 先把 'current' 解析成真实赛季 ID，避免拼出 derived/current/schedule.json 这种不存在路径
+  const resolvedSeason = await resolveSeason(seasonId);
+
+  const cacheKey = `schedule.${resolvedSeason}.v${SUPPORTED_SCHEMA_VERSION}`;
   const cached = getLocalCache(cacheKey);
   if (cached) return cached;
 
   // schedule.json 由 fetch-schedule.py 单独生成，其 build_id 与 post_process 不同步，
   // 因此绕过 fetchDerived 的 build_id 严格校验，直接走远程抓取 + 手动缓存。
   // 优先尝试当前赛季路径，失败则回退历史赛季路径。
-  let payload = await fetchRemoteJsonOrNull(`derived/${seasonId}/schedule.json`);
+  let payload = await fetchRemoteJsonOrNull(`derived/${resolvedSeason}/schedule.json`);
   if (!payload) {
-    payload = await fetchRemoteJsonOrNull(`seasons/${seasonId}/derived/schedule.json`);
+    payload = await fetchRemoteJsonOrNull(`seasons/${resolvedSeason}/derived/schedule.json`);
   }
   if (!payload) {
-    throw new Error(`schedule 数据不可用 (season=${seasonId})`);
+    throw new Error(`schedule 数据不可用 (season=${resolvedSeason})`);
   }
 
   // 同时兼容新包装格式（schema_version+data）和旧裸 canonical 格式
