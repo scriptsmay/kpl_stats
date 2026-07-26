@@ -119,18 +119,20 @@ export async function getCurrentSeason() {
  * @returns {{ seasonId: string, seasonName: string, buildId: string, sourceType: 'current'|'historical', manifest: object|null }}
  */
 export async function resolveSeasonId(season) {
-  if (season && season !== DEFAULT_SEASON) {
+  const current = await getCurrentSeason();
+  const seasonToCheck = season && season !== DEFAULT_SEASON ? season : current.current;
+
+  if (seasonToCheck !== current.current) {
     // Historical season — fetch its manifest for build_id
-    const manifest = await fetchSeasonManifest(season);
+    const manifest = await fetchSeasonManifest(seasonToCheck);
     return {
-      seasonId: season,
-      seasonName: manifest ? `${season}` : season,
+      seasonId: seasonToCheck,
+      seasonName: manifest ? `${seasonToCheck}` : seasonToCheck,
       buildId: manifest?.build_id || null,
       sourceType: 'historical',
       manifest,
     };
   }
-  const current = await getCurrentSeason();
   return {
     seasonId: current.current,
     seasonName: current.season_name || current.current,
@@ -141,9 +143,11 @@ export async function resolveSeasonId(season) {
 }
 
 async function resolveSeason(season) {
-  if (season && season !== DEFAULT_SEASON) return season;
-  const current = await getCurrentSeason();
-  return current.current;
+  if (!season || season === DEFAULT_SEASON) {
+    const current = await getCurrentSeason();
+    return current.current;
+  }
+  return season;
 }
 
 // ─── Historical Path Fallback ───────────────────────────────
@@ -219,7 +223,8 @@ export async function getAvailableSeasons() {
 
 export async function fetchLatest(namespace, season = DEFAULT_SEASON) {
   const resolvedSeason = await resolveSeason(season);
-  const isHistorical = season && season !== DEFAULT_SEASON;
+  const current = await getCurrentSeason();
+  const isHistorical = resolvedSeason !== current.current;
   const cacheKey = `latest.${resolvedSeason}.${namespace}.v${SUPPORTED_SCHEMA_VERSION}`;
 
   if (isHistorical) {
@@ -240,7 +245,8 @@ export async function fetchLatestGlobal(namespace) {
 
 export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
   const resolvedSeason = await resolveSeason(season);
-  const isHistorical = season && season !== DEFAULT_SEASON;
+  const current = await getCurrentSeason();
+  const isHistorical = resolvedSeason !== current.current;
 
   // For historical seasons, use manifest build_id; for current, use current-season build_id
   let buildId;
@@ -248,7 +254,6 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
     const manifest = await fetchSeasonManifest(resolvedSeason);
     buildId = manifest?.build_id || null;
   } else {
-    const current = await getCurrentSeason();
     buildId = current.build_id;
   }
 
@@ -260,9 +265,7 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
     return cached;
   }
 
-  const derivedPath = isHistorical
-    ? `seasons/${resolvedSeason}/derived/${pageKey}.json`
-    : `derived/${resolvedSeason}/${pageKey}.json`;
+  const derivedPath = `derived/${resolvedSeason}/${pageKey}.json`;
 
   const payload = await fetchRemoteJsonOrNull(derivedPath);
 
@@ -381,6 +384,42 @@ export const getGrowthPath = (season = DEFAULT_SEASON) =>
 
 export const getTrendSummary = (season = DEFAULT_SEASON) =>
   fetchDerived('trend-summary', season).then((payload) => payload.data);
+
+export const getAbilityTimeline = (seasonId) => {
+  if (!seasonId) throw new Error('[getAbilityTimeline] seasonId is required');
+  return fetchDerived('ability-timeline', seasonId).then((payload) => {
+    if (payload && payload.data) return payload.data;
+    if (payload && payload.snapshots) return payload;
+    return payload;
+  });
+};
+
+export const getSchedule = async (seasonId) => {
+  if (!seasonId) throw new Error('[getSchedule] seasonId is required');
+
+  const cacheKey = `schedule.${seasonId}.v${SUPPORTED_SCHEMA_VERSION}`;
+  const cached = getLocalCache(cacheKey);
+  if (cached) return cached;
+
+  // schedule.json 由 fetch-schedule.py 单独生成，其 build_id 与 post_process 不同步，
+  // 因此绕过 fetchDerived 的 build_id 严格校验，直接走远程抓取 + 手动缓存。
+  // 优先尝试当前赛季路径，失败则回退历史赛季路径。
+  let payload = await fetchRemoteJsonOrNull(`derived/${seasonId}/schedule.json`);
+  if (!payload) {
+    payload = await fetchRemoteJsonOrNull(`seasons/${seasonId}/derived/schedule.json`);
+  }
+  if (!payload) {
+    throw new Error(`schedule 数据不可用 (season=${seasonId})`);
+  }
+
+  // 同时兼容新包装格式（schema_version+data）和旧裸 canonical 格式
+  const result =
+    payload && payload.schema_version === SUPPORTED_SCHEMA_VERSION && payload.data
+      ? payload.data
+      : payload;
+  setLocalCache(cacheKey, result);
+  return result;
+};
 
 export const clearDataCache = () => {
   const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));

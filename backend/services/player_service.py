@@ -218,7 +218,10 @@ async def fetch_from_third_party(season_type: str = 'all'):
     """从第三方 API 获取数据"""
     try:
         async with httpx.AsyncClient() as client:
-            headers = {}
+            # 第三方 API 可能需要 Referer 或 Authorization 头部
+            headers = {
+                "Referer": "http://www.jungushiyan.cn/gaojie/"
+            }
             if API_KEY:
                 headers["Authorization"] = f"Bearer {API_KEY}"
 

@@ -81,6 +81,12 @@
 
       <!-- AI 洞察 -->
       <InsightSection :sections="aiInsights?.sections" filterId="abilities" title="能力洞察" />
+
+      <!-- 能力趋势 -->
+      <div class="trend-section">
+        <div class="section-title">📈 能力趋势</div>
+        <AbilityTrendChart :season-id="seasonIdForTrend" />
+      </div>
     </div>
   </div>
 </template>
@@ -104,8 +110,12 @@ import {
 import { getPlayerAbilities, getSeasonNameMap, getAiInsights, getInsights } from '../api/github-data';
 import { useSeason } from '../composables/useSeason.js';
 import InsightSection from './insights/InsightSection.vue';
+import AbilityTrendChart from './AbilityTrendChart.vue';
 
-const { selectedSeason, resolvedSeasonName, resolveCurrent } = useSeason();
+const { selectedSeason, resolvedSeasonId, resolvedSeasonName, resolveCurrent } = useSeason();
+
+// 能力趋势组件所需的 seasonId（resolvedSeasonId 优先，回退到 selectedSeason）
+const seasonIdForTrend = computed(() => resolvedSeasonId.value || selectedSeason.value);
 
 // 注册 Chart.js 组件
 Chart.register(
@@ -565,6 +575,11 @@ onUnmounted(() => {
   font-weight: var(--font-weight-semibold);
   color: var(--gray-700);
   margin-bottom: var(--spacing-md);
+}
+
+/* 能力趋势区块 */
+.trend-section {
+  margin-top: var(--spacing-xl);
 }
 
 @media (max-width: 768px) {
