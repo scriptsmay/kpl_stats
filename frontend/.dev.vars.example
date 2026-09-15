@@ -1,0 +1,4 @@
+# Cloudflare Worker 本地开发环境变量示例 (复制为 .dev.vars)
+HALO_API_BASE=https://blog.kplwuyan.site
+HALO_API_TOKEN=your_halo_api_token_here
+HALO_VIDEO_GROUP_ID=attachment-group-25ptmssm
