@@ -80,7 +80,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getMatchRecords, getPlayerSeasons } from '../api/stats';
+import { getMatchRecords, getPlayerSeasons } from '../api/github-data';
 
 const loading = ref(false);
 const error = ref(null);
@@ -92,7 +92,7 @@ const selectedSeason = ref('all');
 const loadSeasons = async () => {
   try {
     const res = await getPlayerSeasons();
-    seasons.value = res.data.data || [];
+    seasons.value = res || [];
     console.log('赛季列表加载成功', seasons.value);
   } catch (err) {
     console.error('加载赛季列表失败', err);

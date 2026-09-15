@@ -4,8 +4,7 @@
  * Persistence: URL ?season= > localStorage > 'current'.
  */
 import { ref, computed, watch } from 'vue';
-import { DEFAULT_SEASON, resolveSeasonId, getAvailableSeasons, getCurrentSeason } from '../api/github-data.js';
-import { getPlayerSeasons } from '../api/stats.js';
+import { DEFAULT_SEASON, resolveSeasonId, getAvailableSeasons, getCurrentSeason, getPlayerSeasons } from '../api/github-data.js';
 
 const STORAGE_KEY = 'kpl_selected_season';
 
@@ -52,10 +51,10 @@ export function useSeason() {
     initPromise = (async () => {
       try {
         const [playerSeasonsRes, currentSeason] = await Promise.all([
-          getPlayerSeasons().catch(() => ({ data: { data: [] } })),
+          getPlayerSeasons().catch(() => []),
           getCurrentSeason().catch(() => null),
         ]);
-        const playerSeasonData = playerSeasonsRes.data?.data || [];
+        const playerSeasonData = playerSeasonsRes || [];
         const currentId = currentSeason?.current || null;
 
         // Store actual current season info (independent of user selection)

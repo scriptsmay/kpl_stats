@@ -427,6 +427,45 @@ export const getSchedule = async (seasonId) => {
   return result;
 };
 
+export const getCareerData = async (seasonType = 'all') => {
+  let suffix = '';
+  if (seasonType === 'league') suffix = '-league';
+  if (seasonType === 'cup') suffix = '-cup';
+  const data = await fetchLatestGlobal(`player-career-wuyan${suffix}`);
+  return { data }; // 包装成 { data: { code: 200, data: ... } }，因为原有 axios 调用点是 res.data，文件本身带有 code/data
+};
+
+export const getPlayerSeasons = async () => {
+  // 固定读取 all 档（不带后缀）
+  const career = await fetchLatestGlobal('player-career-wuyan');
+  const seasonsCovered = career?.data?.career_summary?.seasons_covered || [];
+  
+  const seasonMap = await getSeasonNameMap();
+  
+  return seasonsCovered.map(s => ({
+    season_id: s.tournament_id,
+    season_name: seasonMap[s.tournament_id] || s.tournament_name || s.tournament_id,
+  }));
+};
+
+export const getMatchRecords = async (season = 'all') => {
+  const records = await fetchLatestGlobal('player-match-records');
+  
+  if (season === 'all') {
+    return { data: { data: records } };
+  }
+  
+  const seasonMap = await getSeasonNameMap();
+  const seasonName = seasonMap[season];
+  
+  if (!seasonName) {
+    return { data: { data: [] } };
+  }
+  
+  const filtered = (records || []).filter(r => r.tournament === seasonName);
+  return { data: { data: filtered } };
+};
+
 export const clearDataCache = () => {
   const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
   keys.forEach((k) => localStorage.removeItem(k));

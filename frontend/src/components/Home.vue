@@ -410,7 +410,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { getCareerData, getSeasonNameMap } from '../api/stats';
+import { getCareerData, getSeasonNameMap } from '../api/github-data';
 
 const careerData = ref(null);
 const seasonFilter = ref('all');
@@ -437,7 +437,7 @@ const loadData = async () => {
   error.value = null;
   try {
     const res = await getCareerData(seasonFilter.value);
-    careerData.value = res.data.data;
+    careerData.value = res.data;
     currentPage.value = 1;
   } catch (err) {
     console.error('加载失败', err);
@@ -451,7 +451,7 @@ const loadData = async () => {
 const loadSeasonNameMap = async () => {
   try {
     const res = await getSeasonNameMap();
-    seasonNameMap.value = res.data.data || {};
+    seasonNameMap.value = res || {};
   } catch (err) {
     console.error('加载赛季名称映射失败', err);
     seasonNameMap.value = {
