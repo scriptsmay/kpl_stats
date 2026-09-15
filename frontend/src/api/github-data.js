@@ -29,7 +29,10 @@ function getLocalCache(key) {
     const raw = localStorage.getItem(CACHE_PREFIX + key);
     if (!raw) return null;
     const { data, timestamp } = JSON.parse(raw);
-    const ttl = data?.season && data.season !== getCurrentSeasonIdSync() ? HISTORICAL_CACHE_TTL : CACHE_TTL;
+    const ttl =
+      data?.season && data.season !== getCurrentSeasonIdSync()
+        ? HISTORICAL_CACHE_TTL
+        : CACHE_TTL;
     if (Date.now() - timestamp > ttl) return null;
     return data;
   } catch {
@@ -39,7 +42,10 @@ function getLocalCache(key) {
 
 function setLocalCache(key, data) {
   try {
-    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data, timestamp: Date.now() }));
+    localStorage.setItem(
+      CACHE_PREFIX + key,
+      JSON.stringify({ data, timestamp: Date.now() }),
+    );
   } catch {
     // Ignore storage quota errors.
   }
@@ -71,7 +77,11 @@ async function fetchRemoteJsonOrNull(path) {
 // ─── Validation ─────────────────────────────────────────────
 
 function isCurrentSeasonPayload(payload) {
-  return payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.current && payload?.build_id;
+  return (
+    payload?.schema_version === SUPPORTED_SCHEMA_VERSION &&
+    payload?.current &&
+    payload?.build_id
+  );
 }
 
 function validateDerivedPayload(payload, season, buildId) {
@@ -123,7 +133,8 @@ export async function getCurrentSeason() {
  */
 export async function resolveSeasonId(season) {
   const current = await getCurrentSeason();
-  const seasonToCheck = season && season !== DEFAULT_SEASON ? season : current.current;
+  const seasonToCheck =
+    season && season !== DEFAULT_SEASON ? season : current.current;
 
   if (seasonToCheck !== current.current) {
     // Historical season — fetch its manifest for build_id
@@ -217,7 +228,13 @@ export async function getAvailableSeasons() {
     console.warn('获取赛季列表失败，使用兜底列表', err);
     const current = await getCurrentSeason();
     return [
-      { tournament_id: current.current, tournament_name: current.season_name || current.current, is_latest: 1, is_current: true, season_type: 'league' },
+      {
+        tournament_id: current.current,
+        tournament_name: current.season_name || current.current,
+        is_latest: 1,
+        is_current: true,
+        season_type: 'league',
+      },
     ];
   }
 }
@@ -274,13 +291,21 @@ export async function fetchDerived(pageKey, season = DEFAULT_SEASON) {
 
   if (!payload) {
     // Try last valid cache as final fallback
-    const fallback = getLastValidDerivedCache(cachePrefix, resolvedSeason, buildId);
+    const fallback = getLastValidDerivedCache(
+      cachePrefix,
+      resolvedSeason,
+      buildId,
+    );
     if (fallback) return fallback;
     throw new Error(`${pageKey} 派生数据不可用 (season=${resolvedSeason})`);
   }
 
   if (!validateDerivedPayload(payload, resolvedSeason, buildId)) {
-    const fallback = getLastValidDerivedCache(cachePrefix, resolvedSeason, buildId);
+    const fallback = getLastValidDerivedCache(
+      cachePrefix,
+      resolvedSeason,
+      buildId,
+    );
     if (fallback) return fallback;
     throw new Error(`${pageKey} 派生数据版本不兼容 (season=${resolvedSeason})`);
   }
@@ -294,15 +319,24 @@ function getLastValidDerivedCache(cachePrefix, season, buildId) {
     const candidates = Object.keys(localStorage)
       .filter((key) => key.startsWith(CACHE_PREFIX + cachePrefix))
       .map((key) => getLocalCache(key.slice(CACHE_PREFIX.length)))
-      .filter((payload) => payload?.schema_version === SUPPORTED_SCHEMA_VERSION && payload?.season === season);
+      .filter(
+        (payload) =>
+          payload?.schema_version === SUPPORTED_SCHEMA_VERSION &&
+          payload?.season === season,
+      );
 
     if (buildId) {
       const exact = candidates.find((p) => p?.build_id === buildId);
       if (exact) return exact;
     }
 
-    return candidates
-      .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')))[0] || null;
+    return (
+      candidates.sort((a, b) =>
+        String(b.generated_at || '').localeCompare(
+          String(a.generated_at || ''),
+        ),
+      )[0] || null
+    );
   } catch {
     return null;
   }
@@ -313,7 +347,10 @@ async function derivedData(pageKey, season, fallbackFn) {
     const payload = await fetchDerived(pageKey, season);
     return payload.data;
   } catch (err) {
-    console.warn(`读取 derived/${pageKey} (season=${season}) 失败，降级到 latest`, err);
+    console.warn(
+      `读取 derived/${pageKey} (season=${season}) 失败，降级到 latest`,
+      err,
+    );
     return fallbackFn();
   }
 }
@@ -321,48 +358,70 @@ async function derivedData(pageKey, season, fallbackFn) {
 // ─── Public API Functions ───────────────────────────────────
 
 export const getPlayerAbilities = (season = DEFAULT_SEASON) =>
-  derivedData('abilities', season, () => fetchLatest('player-abilities', season));
+  derivedData('abilities', season, () =>
+    fetchLatest('player-abilities', season),
+  );
 
 export const getAllPlayerStats = (season = DEFAULT_SEASON) =>
   derivedData('ranking', season, () => fetchLatest('all-player-stats', season));
 
 export const getHeroWinRate = (season = DEFAULT_SEASON) =>
-  derivedData('hero-win-rate', season, () => fetchLatest('hero-win-rate', season));
+  derivedData('hero-win-rate', season, () =>
+    fetchLatest('hero-win-rate', season),
+  );
 
 export const getPlayerHeroSummary = (season = DEFAULT_SEASON) =>
-  derivedData('heroes', season, async () => fetchLatest('player-hero-summary', season)).then((data) => {
+  derivedData('heroes', season, async () =>
+    fetchLatest('player-hero-summary', season),
+  ).then((data) => {
     if (data?.summary) return { code: 200, data: data.summary };
     return data;
   });
 
 export const getPlayerHeroBattles = (season = DEFAULT_SEASON) =>
-  derivedData('heroes', season, async () => fetchLatest('player-hero-battles', season)).then((data) => {
+  derivedData('heroes', season, async () =>
+    fetchLatest('player-hero-battles', season),
+  ).then((data) => {
     if (data?.battles) return { heroes: data.battles };
     return data;
   });
 
 export const getPlayerWinStats = (season = DEFAULT_SEASON) =>
-  derivedData('win-lose', season, async () => fetchLatest('player-win-stats', season)).then((data) => {
+  derivedData('win-lose', season, async () =>
+    fetchLatest('player-win-stats', season),
+  ).then((data) => {
     if (data?.win) return { code: 200, data: data.win ? [data.win] : [] };
     return data;
   });
 
 export const getPlayerLoseStats = (season = DEFAULT_SEASON) =>
-  derivedData('win-lose', season, async () => fetchLatest('player-lose-stats', season)).then((data) => {
-    if (data?.lose) return { code: 200, data: data.lose && Object.keys(data.lose).length ? [data.lose] : [] };
+  derivedData('win-lose', season, async () =>
+    fetchLatest('player-lose-stats', season),
+  ).then((data) => {
+    if (data?.lose)
+      return {
+        code: 200,
+        data: data.lose && Object.keys(data.lose).length ? [data.lose] : [],
+      };
     return data;
   });
 
 export const getTeamDamageDistribution = (season = DEFAULT_SEASON) =>
-  derivedData('team-damage-distribution', season, () => fetchLatest('team-damage-distribution', season));
+  derivedData('team-damage-distribution', season, () =>
+    fetchLatest('team-damage-distribution', season),
+  );
 
 export const getWinAffinityAnalysis = (season = DEFAULT_SEASON) =>
-  derivedData('win-affinity-analysis', season, () => fetchLatest('win-affinity-analysis', season));
+  derivedData('win-affinity-analysis', season, () =>
+    fetchLatest('win-affinity-analysis', season),
+  );
 
 export const getPlayerCareer = (season = DEFAULT_SEASON) => {
   // Career data: try season-specific first, then global
   if (season && season !== DEFAULT_SEASON) {
-    return fetchLatest('player-career-wuyan', season).catch(() => fetchLatestGlobal('player-career-wuyan'));
+    return fetchLatest('player-career-wuyan', season).catch(() =>
+      fetchLatestGlobal('player-career-wuyan'),
+    );
   }
   return fetchLatestGlobal('player-career-wuyan');
 };
@@ -410,9 +469,13 @@ export const getSchedule = async (seasonId) => {
   // schedule.json 由 fetch-schedule.py 单独生成，其 build_id 与 post_process 不同步，
   // 因此绕过 fetchDerived 的 build_id 严格校验，直接走远程抓取 + 手动缓存。
   // 优先尝试当前赛季路径，失败则回退历史赛季路径。
-  let payload = await fetchRemoteJsonOrNull(`derived/${resolvedSeason}/schedule.json`);
+  let payload = await fetchRemoteJsonOrNull(
+    `derived/${resolvedSeason}/schedule.json`,
+  );
   if (!payload) {
-    payload = await fetchRemoteJsonOrNull(`seasons/${resolvedSeason}/derived/schedule.json`);
+    payload = await fetchRemoteJsonOrNull(
+      `seasons/${resolvedSeason}/derived/schedule.json`,
+    );
   }
   if (!payload) {
     throw new Error(`schedule 数据不可用 (season=${resolvedSeason})`);
@@ -420,7 +483,9 @@ export const getSchedule = async (seasonId) => {
 
   // 同时兼容新包装格式（schema_version+data）和旧裸 canonical 格式
   const result =
-    payload && payload.schema_version === SUPPORTED_SCHEMA_VERSION && payload.data
+    payload &&
+    payload.schema_version === SUPPORTED_SCHEMA_VERSION &&
+    payload.data
       ? payload.data
       : payload;
   setLocalCache(cacheKey, result);
@@ -432,42 +497,45 @@ export const getCareerData = async (seasonType = 'all') => {
   if (seasonType === 'league') suffix = '-league';
   if (seasonType === 'cup') suffix = '-cup';
   const data = await fetchLatestGlobal(`player-career-wuyan${suffix}`);
-  return { data }; // 包装成 { data: { code: 200, data: ... } }，因为原有 axios 调用点是 res.data，文件本身带有 code/data
+  return data || {};
 };
 
 export const getPlayerSeasons = async () => {
   // 固定读取 all 档（不带后缀）
   const career = await fetchLatestGlobal('player-career-wuyan');
   const seasonsCovered = career?.data?.career_summary?.seasons_covered || [];
-  
+
   const seasonMap = await getSeasonNameMap();
-  
-  return seasonsCovered.map(s => ({
+
+  return seasonsCovered.map((s) => ({
     season_id: s.tournament_id,
-    season_name: seasonMap[s.tournament_id] || s.tournament_name || s.tournament_id,
+    season_name:
+      seasonMap[s.tournament_id] || s.tournament_name || s.tournament_id,
   }));
 };
 
 export const getMatchRecords = async (season = 'all') => {
   const records = await fetchLatestGlobal('player-match-records');
-  
+
   if (season === 'all') {
     return { data: { data: records } };
   }
-  
+
   const seasonMap = await getSeasonNameMap();
   const seasonName = seasonMap[season];
-  
+
   if (!seasonName) {
     return { data: { data: [] } };
   }
-  
-  const filtered = (records || []).filter(r => r.tournament === seasonName);
+
+  const filtered = (records || []).filter((r) => r.tournament === seasonName);
   return { data: { data: filtered } };
 };
 
 export const clearDataCache = () => {
-  const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
+  const keys = Object.keys(localStorage).filter((k) =>
+    k.startsWith(CACHE_PREFIX),
+  );
   keys.forEach((k) => localStorage.removeItem(k));
   currentSeasonCache = null;
   seasonNameMap = null;
@@ -487,7 +555,11 @@ export async function getSeasonNameMap() {
     return seasonNameMap;
   } catch (err) {
     console.error('获取赛季列表失败:', err);
-    return { KPL2026S2: 'KPL2026夏季赛', KPL2026S1: 'KPL2026春季赛', KCC2025: '2025挑战者杯' };
+    return {
+      KPL2026S2: 'KPL2026夏季赛',
+      KPL2026S1: 'KPL2026春季赛',
+      KCC2025: '2025挑战者杯',
+    };
   }
 }
 
@@ -498,6 +570,8 @@ export function debugSeasonInfo() {
     currentSeasonCache: currentSeasonCache?.current,
     buildId: currentSeasonCache?.build_id,
     cachePrefix: CACHE_PREFIX,
-    cachedKeys: Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX)).length,
+    cachedKeys: Object.keys(localStorage).filter((k) =>
+      k.startsWith(CACHE_PREFIX),
+    ).length,
   };
 }
